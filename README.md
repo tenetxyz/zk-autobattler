@@ -9,6 +9,8 @@
 - `server/`
     - Rust backend API
     - Endpoints
+        - `/players/new` (GET)
+            - Returns a new player ID
         - `/games/join` (POST)
             - Input: optional_lobby_id
             - Join's a random lobby ID or creates a new one
