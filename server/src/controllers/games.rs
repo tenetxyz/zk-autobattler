@@ -1,5 +1,6 @@
 use axum::{extract::Extension, http::StatusCode, response::IntoResponse, Json};
-
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 // DB
 use mongodb::bson::doc;
@@ -31,21 +32,21 @@ pub async fn join_game(
     tracing::info!("join_game called");
 
     let mut response = games::JoinGameOutput {
-        lobbyId: String::from(""),
+        lobby_id: String::from(""),
         error: String::from(""),
     };
     let lobbies = db.collection::<Document>("lobby");
 
-    let playerId: String = payload.playerId;
-    let lobbyId: String = payload.lobbyId;
-    if lobbyId.is_empty() {
+    let player_id: String = payload.player_id;
+    let lobby_id: String = payload.lobby_id;
+    if lobby_id.is_empty() {
         // check for existing open lobbies
         let open_lobby = lobbies
             .find_one(
                 doc! {
-                    "player2ID": null,
-                    "player1ID": {
-                        "$ne": playerId.clone()
+                    "player2_id": null,
+                    "player1_id": {
+                        "$ne": player_id.clone()
                     }
                 },
                 None,
@@ -55,66 +56,66 @@ pub async fn join_game(
         if open_lobby.is_some() {
             // join the lobby
             let lobby = open_lobby.unwrap();
-            let lobbyId = lobby.get("_id").unwrap().as_object_id().unwrap();
+            let lobby_id = lobby.get("_id").unwrap().as_object_id().unwrap();
             let update_result = lobbies
                 .update_one(
                     doc! {
-                        "_id": lobbyId,
+                        "_id": lobby_id,
                     },
                     doc! {
-                        "$set": { "player2ID": playerId }
+                        "$set": { "player2_id": player_id }
                     },
                     None,
                 )
                 .await
                 .unwrap();
 
-            response.lobbyId = lobbyId.to_string();
+            response.lobby_id = lobby_id.to_string();
         } else {
             // if no open lobbies, create a new one
             let new_lobby = doc! {
-                "lobbyId": null,
-                "player1ID": playerId,
-                "player2ID": null,
+                "lobby_id": null,
+                "player1_id": player_id,
+                "player2_id": null,
             };
             let insert_result = lobbies.insert_one(new_lobby.clone(), None).await.unwrap();
-            let newLobbyId = insert_result.inserted_id.as_object_id().unwrap();
+            let newlobby_id = insert_result.inserted_id.as_object_id().unwrap();
 
             let update_result = lobbies
                 .update_one(
                     doc! {
-                        "_id": newLobbyId,
+                        "_id": newlobby_id,
                     },
                     doc! {
-                        "$set": { "lobbyId": newLobbyId.to_string() }
+                        "$set": { "lobby_id": newlobby_id.to_string() }
                     },
                     None,
                 )
                 .await
                 .unwrap();
 
-            response.lobbyId = newLobbyId.to_string();
+            response.lobby_id = newlobby_id.to_string();
         }
     } else {
         // join this specific lobby, fail if already full
         let update_result = lobbies
             .update_one(
                 doc! {
-                    "lobbyId": lobbyId.clone(),
-                    "player1ID": {
-                        "$ne": playerId.clone()
+                    "lobby_id": lobby_id.clone(),
+                    "player1_id": {
+                        "$ne": player_id.clone()
                     },
-                    "player2ID": null,
+                    "player2_id": null,
                 },
                 doc! {
-                    "$set": { "player2ID": playerId }
+                    "$set": { "player2_id": player_id }
                 },
                 None,
             )
             .await
             .unwrap();
         if update_result.modified_count == 1 {
-            response.lobbyId = lobbyId;
+            response.lobby_id = lobby_id;
         } else {
             // TODO: Separate is full vs does not exist vs already in it
             response.error = String::from("Lobby is full or does not exist");
@@ -132,9 +133,103 @@ pub async fn play_game(
 ) -> impl IntoResponse {
     tracing::info!("play_game called");
 
-    let out = "Done";
+    let lobby_id = payload.lobby_id;
+    let mut response = games::PlayGameOutput {
+        error: String::from(""),
+    };
 
-    (StatusCode::OK, out)
+    // check if lobby exists
+    let lobbies = db.collection::<Document>("lobby");
+    let lobby = lobbies
+        .find_one(
+            doc! {
+                "lobby_id": lobby_id.clone(),
+            },
+            None,
+        )
+        .await
+        .unwrap();
+    if lobby.is_none() {
+        response.error = String::from("Lobby does not exist");
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(response),
+        );
+    }
+
+    // lobby.unwrap()
+    let lobby = bson::to_bson(&lobby.unwrap()).unwrap();
+    let lobby = bson::from_bson::<games::Lobby>(lobby).unwrap();
+    // from_bson::<games::Lobby>(lobby);
+
+    let player1_id = lobby.player1_id;
+    let player2_id = lobby.player2_id;
+    let is_player_1 = player1_id == payload.player_id;
+
+    if !is_player_1 && player2_id != payload.player_id {
+        response.error = String::from("Player is not in this lobby");
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(response),
+        );
+    }
+
+    // check if game document exists
+    let games = db.collection::<Document>("game");
+    let game = games
+        .find_one(
+            doc! {
+                "lobby_id": lobby_id.clone(),
+            },
+            None,
+        )
+        .await
+        .unwrap();
+
+    if game.is_none() {
+        let arena_hash = MULTIPLY_ID;
+        let mut s = DefaultHasher::new();
+        arena_hash.hash(&mut s);
+        let arena_hash = s.finish().to_string();
+
+        let creation_bson = bson::to_bson(&payload.creation).unwrap();
+
+        let creation_hash = payload.creation;
+        let mut s = DefaultHasher::new();
+        creation_hash.hash(&mut s);
+        let creation_hash = s.finish().to_string();
+
+        let mut new_game = doc! {
+            "lobby_id": lobby_id,
+            "player1_id": player1_id,
+            "player2_id": player2_id,
+            "creation1": null,
+            "creation1Hash": null,
+            "creation2": null,
+            "creation2Hash": null,
+            "arenaHash": arena_hash,
+            "winnerCreationHash": null,
+            "winnerID": null,
+            "state": null,
+        };
+
+        if is_player_1 {
+            new_game.insert("state", "player2Turn");
+            new_game.insert("creation1",  creation_bson);
+            new_game.insert("creation1Hash",  creation_hash);
+        } else {
+            new_game.insert("state", "player1Turn");
+            new_game.insert("creation2", creation_bson);
+            new_game.insert("creation2Hash",  creation_hash);
+        }
+
+        // create it
+        let insert_result = games.insert_one(new_game.clone(), None).await.unwrap();
+    } else {
+
+    }
+
+    return (StatusCode::OK, Json(response));
 }
 
 pub async fn commit_outcome(
