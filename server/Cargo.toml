@@ -15,6 +15,10 @@ tower-http = { version = "0.2", features = ["trace"] }
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+mongodb = "2.3.0"
+bson = { version = "2", features = ["chrono-0_4"] } # Needed for using chrono datetime in doc
+chrono = "0.4" # Used for setting DateTimes
 
 methods = { path = "../methods" }
 risc0-zkvm = "0.11"
+dotenv = "0.15.0"

@@ -1,3 +1,4 @@
+use dotenv::dotenv;
 use axum::{
     routing::{get, post},
     http::StatusCode,
@@ -6,6 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
+use mongodb::{bson::doc, options::ClientOptions, Client};
 
 use methods::{MULTIPLY_ID, MULTIPLY_PATH};
 use risc0_zkvm::host::Prover;
@@ -26,8 +28,31 @@ pub struct Receipt {
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok(); // This line loads the environment variables from the ".env" file.
+
     // initialize tracing
     tracing_subscriber::fmt::init();
+
+    let mongodb_uri = std::env::var("MONGODB_URI").expect("MONGODB_URI must be set.");
+
+    // Parse your connection string into an options struct
+    let mut client_options =
+        ClientOptions::parse(mongodb_uri)
+            .await.unwrap();
+    // Manually set an option
+    client_options.app_name = Some("Rust Demo".to_string());
+    // Get a handle to the cluster
+    let client = Client::with_options(client_options).unwrap();
+    // Ping the server to see if you can connect to the cluster
+    client
+        .database("admin")
+        .run_command(doc! {"ping": 1}, None)
+        .await.unwrap();
+    println!("Connected successfully.");
+    // List the names of the databases in that cluster
+    for db_name in client.list_database_names(None, None).await.unwrap() {
+        println!("{}", db_name);
+    }
 
     // build our application with a route
     let app = Router::new()
@@ -45,6 +70,8 @@ async fn main() {
         .await
         .unwrap();
 }
+
+
 
 // basic handler that responds with a static string
 async fn root() -> &'static str {
