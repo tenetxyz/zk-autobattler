@@ -1,9 +1,10 @@
-use axum::{
-    extract::Extension,
-    http::StatusCode,
-    response::IntoResponse,
-    Json
-};
+use axum::{extract::Extension, http::StatusCode, response::IntoResponse, Json};
+
+
+// DB
+use mongodb::bson::doc;
+use mongodb::bson::Document;
+use mongodb::Database;
 
 // ZK VM
 use risc0_zkvm::host::Prover;
@@ -13,11 +14,8 @@ use risc0_zkvm::serde::{from_slice, to_vec};
 use methods::{MULTIPLY_ID, MULTIPLY_PATH};
 
 use crate::models::games;
-use mongodb::Client;
 
-pub async fn get_all_games(
-    Extension(db): Extension<Client>,
-) -> impl IntoResponse {
+pub async fn get_all_games(Extension(db): Extension<Database>) -> impl IntoResponse {
     tracing::info!("get_all_games called");
 
     let out = "Done";
@@ -28,19 +26,109 @@ pub async fn get_all_games(
 pub async fn join_game(
     // this argument tells axum to parse the request body
     Json(payload): Json<games::JoinGameInput>,
-    Extension(db): Extension<Client>,
+    Extension(db): Extension<Database>,
 ) -> impl IntoResponse {
     tracing::info!("join_game called");
 
-    let out = "Done";
+    let mut response = games::JoinGameOutput {
+        lobbyId: String::from(""),
+        error: String::from(""),
+    };
+    let lobbies = db.collection::<Document>("lobby");
 
-    (StatusCode::OK, out)
+    let playerId: String = payload.playerId;
+    let lobbyId: String = payload.lobbyId;
+    if lobbyId.is_empty() {
+        // check for existing open lobbies
+        let open_lobby = lobbies
+            .find_one(
+                doc! {
+                    "player2ID": null,
+                    "player1ID": {
+                        "$ne": playerId.clone()
+                    }
+                },
+                None,
+            )
+            .await
+            .unwrap();
+        if open_lobby.is_some() {
+            // join the lobby
+            let lobby = open_lobby.unwrap();
+            let lobbyId = lobby.get("_id").unwrap().as_object_id().unwrap();
+            let update_result = lobbies
+                .update_one(
+                    doc! {
+                        "_id": lobbyId,
+                    },
+                    doc! {
+                        "$set": { "player2ID": playerId }
+                    },
+                    None,
+                )
+                .await
+                .unwrap();
+
+            response.lobbyId = lobbyId.to_string();
+        } else {
+            // if no open lobbies, create a new one
+            let new_lobby = doc! {
+                "lobbyId": null,
+                "player1ID": playerId,
+                "player2ID": null,
+            };
+            let insert_result = lobbies.insert_one(new_lobby.clone(), None).await.unwrap();
+            let newLobbyId = insert_result.inserted_id.as_object_id().unwrap();
+
+            let update_result = lobbies
+                .update_one(
+                    doc! {
+                        "_id": newLobbyId,
+                    },
+                    doc! {
+                        "$set": { "lobbyId": newLobbyId.to_string() }
+                    },
+                    None,
+                )
+                .await
+                .unwrap();
+
+            response.lobbyId = newLobbyId.to_string();
+        }
+    } else {
+        // join this specific lobby, fail if already full
+        let update_result = lobbies
+            .update_one(
+                doc! {
+                    "lobbyId": lobbyId.clone(),
+                    "player1ID": {
+                        "$ne": playerId.clone()
+                    },
+                    "player2ID": null,
+                },
+                doc! {
+                    "$set": { "player2ID": playerId }
+                },
+                None,
+            )
+            .await
+            .unwrap();
+        if update_result.modified_count == 1 {
+            response.lobbyId = lobbyId;
+        } else {
+            // TODO: Separate is full vs does not exist vs already in it
+            response.error = String::from("Lobby is full or does not exist");
+            return (StatusCode::BAD_REQUEST,  Json(response));
+        }
+    }
+
+    return (StatusCode::OK, Json(response));
 }
 
 pub async fn play_game(
     // this argument tells axum to parse the request body
     Json(payload): Json<games::PlayGameInput>,
-    Extension(db): Extension<Client>,
+    Extension(db): Extension<Database>,
 ) -> impl IntoResponse {
     tracing::info!("play_game called");
 
@@ -52,7 +140,7 @@ pub async fn play_game(
 pub async fn commit_outcome(
     // this argument tells axum to parse the request body
     Json(payload): Json<games::CommitOutcomeInput>,
-    Extension(db): Extension<Client>,
+    Extension(db): Extension<Database>,
 ) -> impl IntoResponse {
     tracing::info!("commit_outcome called");
 
@@ -60,7 +148,6 @@ pub async fn commit_outcome(
 
     (StatusCode::OK, out)
 }
-
 
 pub async fn prove_factors(
     // this argument tells axum to parse the request body

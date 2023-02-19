@@ -53,6 +53,7 @@ async fn main() {
     // initialize db
     let mongodb_uri = std::env::var("MONGODB_URI").expect("MONGODB_URI must be set.");
     let client = connect_db(mongodb_uri).await;
+    let db = client.database("Cluster0");
 
     let cors = CorsLayer::new().allow_origin(Any);
 
@@ -68,7 +69,7 @@ async fn main() {
         .route("/", get(root))
         .nest("/games", games_routes)
         .layer(cors)
-        .layer(Extension(client));
+        .layer(Extension(db));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
     tracing::info!("listening on {}", addr);

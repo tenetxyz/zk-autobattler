@@ -10,6 +10,13 @@ pub struct FactorsInput {
 #[derive(Deserialize)]
 pub struct JoinGameInput {
     pub playerId: String,
+    pub lobbyId: String, // TODO: Make this optional
+}
+
+#[derive(Serialize)]
+pub struct JoinGameOutput {
+    pub lobbyId: String,
+    pub error: String
 }
 
 #[derive(Deserialize)]
