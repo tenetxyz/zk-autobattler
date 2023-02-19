@@ -12,6 +12,7 @@
         - `/games/join` (POST)
             - Input: optional_lobby_id
             - Join's a random lobby ID or creates a new one
+            - Output: lobby ID on success
         - `/games/play` (POST)
             - Input: lobbyID, playerID, creation
             - Runs the arena code based on the lobbyID for the players once both players have committed their creations
@@ -54,8 +55,6 @@
             - lobby_ID
             - playerA_ID
             - playerB_ID
-    - TODO: Lobby state + pending games state for each player
-
 
 ### TODO
 - How do users move creations between browsers? Or if they clear data in browser, do they loose it all?

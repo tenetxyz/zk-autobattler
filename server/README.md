@@ -1,5 +1,5 @@
 # server
 
 ```
-RUST_LOG=debug && cargo run
+RUST_LOG=info cargo run
 ```
