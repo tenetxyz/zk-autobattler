@@ -31,7 +31,7 @@
     - In the initial case, it will be the first public auto battler area we build
 
 ### Database
-- Initially, for the database we are going to use Google Firestore
+- Initially, for the database we are going to use MongoDB
     - Anyone will be able to read from this database
     - And there will be an endpoint which anyone can submit a valid proof to update the database
 - We understand this is a point of centralization, as we as the host of this database, could do anything we want with it. However, we chose to do this because the verifier for Risc Zero is currently in Rust and popular blockchains do not support it. Eventually, all these global records would be stored on-chain with contracts to read and write to them.

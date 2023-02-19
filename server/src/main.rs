@@ -40,7 +40,7 @@ async fn main() {
         ClientOptions::parse(mongodb_uri)
             .await.unwrap();
     // Manually set an option
-    client_options.app_name = Some("Rust Demo".to_string());
+    client_options.app_name = Some("Tenet DB".to_string());
     // Get a handle to the cluster
     let client = Client::with_options(client_options).unwrap();
     // Ping the server to see if you can connect to the cluster
@@ -48,11 +48,7 @@ async fn main() {
         .database("admin")
         .run_command(doc! {"ping": 1}, None)
         .await.unwrap();
-    println!("Connected successfully.");
-    // List the names of the databases in that cluster
-    for db_name in client.list_database_names(None, None).await.unwrap() {
-        println!("{}", db_name);
-    }
+    tracing::info!("Database connected successfully.");
 
     // build our application with a route
     let app = Router::new()
