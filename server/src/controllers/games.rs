@@ -12,7 +12,7 @@ use risc0_zkvm::host::Prover;
 use risc0_zkvm::serde::{from_slice, to_vec};
 
 // Custom Modules
-use methods::{MULTIPLY_ID, MULTIPLY_PATH};
+use methods::{TENET_ARENA_1_ID, TENET_ARENA_1_PATH};
 
 use crate::models::games;
 
@@ -127,7 +127,11 @@ pub async fn join_game(
 }
 
 async fn commence_battle(game: games::Game){
+    // start the battle with both user inputs
 
+    // call the verify function with generated proof of battle
+    // once battle is done, update the game document
+    // remove the user creations and add the battle result
 }
 
 // TODO: Which hash function to use?
@@ -192,7 +196,7 @@ pub async fn play_game(
         .unwrap();
 
     if game.is_none() {
-        let arena_hash = MULTIPLY_ID;
+        let arena_hash = TENET_ARENA_1_ID;
         let mut s = DefaultHasher::new();
         arena_hash.hash(&mut s);
         let arena_hash = s.finish().to_string();
@@ -355,9 +359,9 @@ fn do_factors_proof(payload: games::FactorsInput) -> Result<String, risc0_zkvm::
 
     // Multiply them inside the ZKP
     // First, we make the prover, loading the 'multiply' method
-    let multiply_src = std::fs::read(MULTIPLY_PATH)
+    let multiply_src = std::fs::read(TENET_ARENA_1_PATH)
         .expect("Method code should be present at the specified path; did you use the correct *_PATH constant?");
-    let mut prover = Prover::new(&multiply_src, MULTIPLY_ID).expect(
+    let mut prover = Prover::new(&multiply_src, TENET_ARENA_1_ID).expect(
         "Prover should be constructed from valid method source code and corresponding method ID",
     );
 

@@ -10,3 +10,4 @@ risc0-build = "0.11"
 
 [dependencies]
 risc0-zkvm-guest = "0.11"
+tenet_core = { path = "../../core" }

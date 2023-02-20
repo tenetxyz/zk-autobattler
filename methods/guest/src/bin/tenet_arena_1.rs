@@ -13,13 +13,23 @@
 // limitations under the License.
 
 #![no_main]
-#![no_std]
 
 use risc0_zkvm_guest::env;
 
 risc0_zkvm_guest::entry!(main);
 
+use tenet_core::Deck;
+
 pub fn main() {
+
+    let player1_id: String = env::read();
+    let creation_1: Deck = env::read();
+
+    let player2_id: String = env::read();
+    let creation_2: Deck = env::read();
+
+    // Check if creations are valid
+
     // Load the first number from the host
     let a: u64 = env::read();
     // Load the second number from the host

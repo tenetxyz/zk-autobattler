@@ -739,6 +739,7 @@ version = "0.1.0"
 dependencies = [
  "risc0-build",
  "risc0-zkvm-guest",
+ "tenet_core",
 ]
 
 [[package]]
@@ -1481,6 +1482,13 @@ dependencies = [
  "redox_syscall",
  "remove_dir_all",
  "winapi",
+]
+
+[[package]]
+name = "tenet_core"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

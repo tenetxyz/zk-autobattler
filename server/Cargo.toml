@@ -19,6 +19,7 @@ mongodb = "2.3.0"
 bson = { version = "2", features = ["chrono-0_4"] } # Needed for using chrono datetime in doc
 chrono = "0.4" # Used for setting DateTimes
 
+tenet_core = { path = "../core" }
 methods = { path = "../methods" }
 risc0-zkvm = "0.11"
 dotenv = "0.15.0"

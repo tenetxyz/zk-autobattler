@@ -1,7 +1,6 @@
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-
-const CARDS_PER_DECK: usize = 5;
+use tenet_core::Deck;
 
 // the input to our `create_user` handler
 #[derive(Deserialize)]
@@ -20,17 +19,6 @@ pub struct JoinGameInput {
 pub struct JoinGameOutput {
     pub lobby_id: String,
     pub error: String
-}
-
-#[derive(Hash, Serialize, Deserialize)]
-pub struct Card {
-    pub health: u32,
-    pub attack: u32,
-}
-
-#[derive(Hash, Serialize, Deserialize)]
-pub struct Deck {
-    pub cards: [Card; CARDS_PER_DECK],
 }
 
 #[derive(Deserialize)]

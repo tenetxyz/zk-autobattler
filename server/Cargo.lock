@@ -1999,6 +1999,7 @@ dependencies = [
  "risc0-zkvm",
  "serde",
  "serde_json",
+ "tenet_core",
  "tokio",
  "tower-http 0.2.5",
  "tracing",
@@ -2154,6 +2155,13 @@ dependencies = [
  "redox_syscall",
  "remove_dir_all",
  "winapi",
+]
+
+[[package]]
+name = "tenet_core"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
