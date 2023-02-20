@@ -126,6 +126,11 @@ pub async fn join_game(
     return (StatusCode::OK, Json(response));
 }
 
+async fn commence_battle(game: games::Game){
+
+}
+
+// TODO: Which hash function to use?
 pub async fn play_game(
     // this argument tells axum to parse the request body
     Json(payload): Json<games::PlayGameInput>,
@@ -204,12 +209,12 @@ pub async fn play_game(
             "player1_id": player1_id,
             "player2_id": player2_id,
             "creation1": null,
-            "creation1Hash": null,
+            "creation1_hash": null,
             "creation2": null,
-            "creation2Hash": null,
-            "arenaHash": arena_hash,
-            "winnerCreationHash": null,
-            "winnerID": null,
+            "creation2_hash": null,
+            "arena_hash": arena_hash,
+            "winner_creation_hash": null,
+            "winner_id": null,
             "state": null,
         };
 
@@ -226,7 +231,88 @@ pub async fn play_game(
         // create it
         let insert_result = games.insert_one(new_game.clone(), None).await.unwrap();
     } else {
+        // game exists, check if it's in the right state
+        let game_doc = game.unwrap();
+        let game_id = game_doc.get("_id").unwrap().as_object_id().unwrap();
+        let game = bson::to_bson(&game_doc).unwrap();
+        let game = bson::from_bson::<games::Game>(game).unwrap();
 
+        if (game.state == "player1Turn" && !is_player_1) || (game.state == "player2Turn" && is_player_1) {
+            response.error = String::from("It's not your turn");
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(response),
+            );
+        }
+
+        if game.state == "playing" || game.state == "complete" {
+            response.error = String::from("Game is in progress or already over");
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(response),
+            );
+        }
+
+        let creation_bson = bson::to_bson(&payload.creation).unwrap();
+        let creation_hash = payload.creation;
+        let mut s = DefaultHasher::new();
+        creation_hash.hash(&mut s);
+        let creation_hash = s.finish().to_string();
+
+        let mut new_game_doc = None;
+
+        // Check if creation exists
+        if game.state == "player1Turn" {
+            if creation_hash == game.creation1_hash {
+                // COMMENCE AUTO BATTLE
+                new_game_doc = Some(doc! {
+                    "$set": {
+                        "state": "playing",
+                    }
+                });
+                commence_battle(game);
+            } else {
+                new_game_doc = Some(doc! {
+                    "$set": {
+                        "creation1": creation_bson,
+                        "creation1_hash": creation_hash,
+                        "state": "player2Turn",
+                    }
+                });
+            }
+        }  else if game.state == "player2Turn" {
+            if creation_hash == game.creation2_hash {
+                // COMMENCE AUTO BATTLE
+                new_game_doc = Some(doc! {
+                    "$set": {
+                        "state": "playing",
+                    }
+                });
+                commence_battle(game);
+            } else {
+                // update game state
+                new_game_doc = Some(doc! {
+                    "$set": {
+                        "creation2": creation_bson,
+                        "creation2_hash": creation_hash,
+                        "state": "player1Turn",
+                    }
+                });
+            }
+        }
+
+         // update game state
+         let update_result = games
+         .update_one(
+             doc! {
+                 "_id": game_id,
+             },
+             new_game_doc.unwrap(),
+             None,
+         )
+         .await
+         .unwrap();
+        // Check if creation changed
     }
 
     return (StatusCode::OK, Json(response));

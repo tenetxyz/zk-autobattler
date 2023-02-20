@@ -53,6 +53,23 @@ pub struct Lobby {
     pub lobby_id: String,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct Game {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    id: Option<ObjectId>,
+    pub player1_id: String,
+    pub player2_id: String,
+    pub lobby_id: String,
+    pub creation1: Deck,
+    pub creation1_hash: String,
+    pub creation2: Deck,
+    pub creation2_hash: String,
+    pub arena_hash: String,
+    pub winner_creation_hash: String,
+    pub winner_id: String,
+    pub state: String,
+}
+
 #[derive(Deserialize)]
 pub struct CommitOutcomeInput {
     pub player_id: String,
