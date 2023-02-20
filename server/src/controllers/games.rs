@@ -119,15 +119,37 @@ pub async fn join_game(
         } else {
             // TODO: Separate is full vs does not exist vs already in it
             response.error = String::from("Lobby is full or does not exist");
-            return (StatusCode::BAD_REQUEST,  Json(response));
+            return (StatusCode::BAD_REQUEST, Json(response));
         }
     }
 
     return (StatusCode::OK, Json(response));
 }
 
-async fn commence_battle(game: games::Game){
+async fn commence_battle(game: &games::Game) {
     // start the battle with both user inputs
+    let arena_src = std::fs::read(TENET_ARENA_1_PATH)
+    .expect("Method code should be present at the specified path; did you use the correct *_PATH constant?");
+    let mut prover = Prover::new(&arena_src, TENET_ARENA_1_ID).expect(
+        "Prover should be constructed from valid method source code and corresponding method ID",
+    );
+
+    // Next we send a & b to the guest
+    prover.add_input(to_vec(&game.player1_id).unwrap().as_slice()).unwrap();
+    prover.add_input(to_vec(&game.creation1.unwrap()).unwrap().as_slice()).unwrap();
+    prover.add_input(to_vec(&game.player1_id).unwrap().as_slice()).unwrap();
+    prover.add_input(to_vec(&game.creation2.unwrap()).unwrap().as_slice()).unwrap();
+
+    tracing::info!("Starting proof");
+
+    // Run prover & generate receipt
+    let receipt = prover.run()
+    .expect("Valid code should be provable if it doesn't overflow the cycle limit. See `embed_methods_with_options` for information on adjusting maximum cycle count.");
+
+    tracing::info!("Proof done!");
+
+    let receipt = receipt.get_journal().unwrap();
+    println!("Receipt: {:?}", receipt);
 
     // call the verify function with generated proof of battle
     // once battle is done, update the game document
@@ -160,10 +182,7 @@ pub async fn play_game(
         .unwrap();
     if lobby.is_none() {
         response.error = String::from("Lobby does not exist");
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(response),
-        );
+        return (StatusCode::BAD_REQUEST, Json(response));
     }
 
     // lobby.unwrap()
@@ -177,10 +196,7 @@ pub async fn play_game(
 
     if !is_player_1 && player2_id != payload.player_id {
         response.error = String::from("Player is not in this lobby");
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(response),
-        );
+        return (StatusCode::BAD_REQUEST, Json(response));
     }
 
     // check if game document exists
@@ -224,12 +240,12 @@ pub async fn play_game(
 
         if is_player_1 {
             new_game.insert("state", "player2Turn");
-            new_game.insert("creation1",  creation_bson);
-            new_game.insert("creation1Hash",  creation_hash);
+            new_game.insert("creation1", creation_bson);
+            new_game.insert("creation1_hash", creation_hash);
         } else {
             new_game.insert("state", "player1Turn");
             new_game.insert("creation2", creation_bson);
-            new_game.insert("creation2Hash",  creation_hash);
+            new_game.insert("creation2_hash", creation_hash);
         }
 
         // create it
@@ -241,20 +257,16 @@ pub async fn play_game(
         let game = bson::to_bson(&game_doc).unwrap();
         let game = bson::from_bson::<games::Game>(game).unwrap();
 
-        if (game.state == "player1Turn" && !is_player_1) || (game.state == "player2Turn" && is_player_1) {
+        if (game.state == "player1Turn" && !is_player_1)
+            || (game.state == "player2Turn" && is_player_1)
+        {
             response.error = String::from("It's not your turn");
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(response),
-            );
+            return (StatusCode::BAD_REQUEST, Json(response));
         }
 
         if game.state == "playing" || game.state == "complete" {
             response.error = String::from("Game is in progress or already over");
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(response),
-            );
+            return (StatusCode::BAD_REQUEST, Json(response));
         }
 
         let creation_bson = bson::to_bson(&payload.creation).unwrap();
@@ -267,14 +279,14 @@ pub async fn play_game(
 
         // Check if creation exists
         if game.state == "player1Turn" {
-            if creation_hash == game.creation1_hash {
+            if game.creation1_hash.is_some() && creation_hash == *game.creation1_hash.as_ref().unwrap() {
                 // COMMENCE AUTO BATTLE
                 new_game_doc = Some(doc! {
                     "$set": {
                         "state": "playing",
                     }
                 });
-                commence_battle(game);
+                commence_battle(&game).await;
             } else {
                 new_game_doc = Some(doc! {
                     "$set": {
@@ -284,15 +296,15 @@ pub async fn play_game(
                     }
                 });
             }
-        }  else if game.state == "player2Turn" {
-            if creation_hash == game.creation2_hash {
+        } else if game.state == "player2Turn" {
+            if  game.creation2_hash.is_some() && creation_hash == *game.creation2_hash.as_ref().unwrap() {
                 // COMMENCE AUTO BATTLE
                 new_game_doc = Some(doc! {
                     "$set": {
                         "state": "playing",
                     }
                 });
-                commence_battle(game);
+                commence_battle(&game).await;
             } else {
                 // update game state
                 new_game_doc = Some(doc! {
@@ -305,17 +317,17 @@ pub async fn play_game(
             }
         }
 
-         // update game state
-         let update_result = games
-         .update_one(
-             doc! {
-                 "_id": game_id,
-             },
-             new_game_doc.unwrap(),
-             None,
-         )
-         .await
-         .unwrap();
+        // update game state
+        let update_result = games
+            .update_one(
+                doc! {
+                    "_id": game_id,
+                },
+                new_game_doc.unwrap(),
+                None,
+            )
+            .await
+            .unwrap();
         // Check if creation changed
     }
 
