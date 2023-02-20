@@ -137,7 +137,7 @@ async fn commence_battle(game: &games::Game) {
     // Next we send a & b to the guest
     prover.add_input_u32_slice(&to_vec(&game.player1_id).unwrap().as_slice());
     prover.add_input_u32_slice(&to_vec(&game.creation1.unwrap()).unwrap().as_slice());
-    prover.add_input_u32_slice(&to_vec(&game.player1_id).unwrap().as_slice());
+    prover.add_input_u32_slice(&to_vec(&game.player2_id).unwrap().as_slice());
     prover.add_input_u32_slice(&to_vec(&game.creation2.unwrap()).unwrap().as_slice());
 
     tracing::info!("Starting proof");
@@ -148,10 +148,8 @@ async fn commence_battle(game: &games::Game) {
 
     tracing::info!("Proof done!");
 
-    // let game_result: tenet_core::GameResult = from_slice(&receipt.get_journal().unwrap()).unwrap();
-
     let vec = receipt.journal;
-    let committed_state: String = from_slice(&vec).unwrap();
+    let committed_state: tenet_core::GameResult = from_slice(&vec).unwrap();
     println!("Receipt: {:?}", committed_state);
 
     // call the verify function with generated proof of battle
@@ -349,50 +347,3 @@ pub async fn commit_outcome(
     (StatusCode::OK, out)
 }
 
-// fn do_factors_proof(payload: games::FactorsInput) -> Result<String, risc0_zkvm::host::Exception> {
-//     // Pick two numbers
-//     let a: u64 = payload.a;
-//     let b: u64 = payload.b;
-
-//     // Multiply them inside the ZKP
-//     // First, we make the prover, loading the 'multiply' method
-//     let multiply_src = std::fs::read(TENET_ARENA_1_PATH)
-//         .expect("Method code should be present at the specified path; did you use the correct *_PATH constant?");
-//     let mut prover = Prover::new(&multiply_src, TENET_ARENA_1_ID).expect(
-//         "Prover should be constructed from valid method source code and corresponding method ID",
-//     );
-
-//     // Next we send a & b to the guest
-//     prover.add_input(to_vec(&a).unwrap().as_slice());
-//     prover.add_input(to_vec(&b).unwrap().as_slice());
-//     // Run prover & generate receipt
-//     let receipt = prover.run()
-//         .expect("Valid code should be provable if it doesn't overflow the cycle limit. See `embed_methods_with_options` for information on adjusting maximum cycle count.");
-
-//     println!("Proof done!");
-
-//     // // Extract journal of receipt (i.e. output c, where c = a * b)
-//     // let c: u64 = from_slice(
-//     //     &receipt
-//     //         .get_journal_vec()
-//     //         .expect("Journal should be available for valid receipts"),
-//     // )
-//     // .expect("Journal output should deserialize into the same types (& order) that it was written");
-
-//     // // Print an assertion
-//     // println!("I know the factors of {}, and I can prove it!", c);
-
-//     // // Here is where one would send 'receipt' over the network...
-
-//     // // Verify receipt, panic if it's wrong
-//     // receipt.verify(MULTIPLY_ID).expect(
-//     //     "Code you have proven should successfully verify; did you specify the correct method ID?",
-//     // );
-
-//     let receipt = games::Receipt {
-//         journal: receipt.get_journal().unwrap().to_vec(),
-//         seal: receipt.get_seal().unwrap().to_vec(),
-//     };
-
-//     Ok(base64::encode(bincode::serialize(&receipt).unwrap()))
-// }

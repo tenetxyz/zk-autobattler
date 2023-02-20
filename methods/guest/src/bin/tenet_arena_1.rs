@@ -146,25 +146,15 @@ pub fn main() {
         result = String::from("TIE");
     }
 
-    // let game_result = tenet_core::GameResult {
-    //     player1_id: player1_id,
-    //     player2_id: player2_id,
-    //     creation1_hash: creation1_hash,
-    //     creation2_hash: creation2_hash,
-    //     winner_creation_hash: winner_creation_hash,
-    //     winner_id: winner_id,
-    //     result: result,
-    // };
+    let game_result = tenet_core::GameResult {
+        player1_id: player1_id,
+        player2_id: player2_id,
+        creation1_hash: creation1_hash,
+        creation2_hash: creation2_hash,
+        winner_creation_hash: winner_creation_hash,
+        winner_id: winner_id,
+        result: result,
+    };
 
-    // let game_result = tenet_core::GameResult {
-    //     player1_id: String::from("player1_id"),
-    //     player2_id: String::from("player2_id"),
-    //     creation1_hash: String::from("creation1_hash"),
-    //     creation2_hash: String::from("creation2_hash"),
-    //     winner_creation_hash: String::from("winner_creation_hash"),
-    //     winner_id: String::from("winner_id"),
-    //     result: String::from("result")
-    // };
-
-    env::commit(&result);
+    env::commit(&game_result);
 }
