@@ -8,7 +8,7 @@ use mongodb::bson::Document;
 use mongodb::Database;
 
 // ZK VM
-use risc0_zkvm::host::Prover;
+use risc0_zkvm::Prover;
 use risc0_zkvm::serde::{from_slice, to_vec};
 
 // Custom Modules
@@ -135,10 +135,10 @@ async fn commence_battle(game: &games::Game) {
     );
 
     // Next we send a & b to the guest
-    prover.add_input(to_vec(&game.player1_id).unwrap().as_slice()).unwrap();
-    prover.add_input(to_vec(&game.creation1.unwrap()).unwrap().as_slice()).unwrap();
-    prover.add_input(to_vec(&game.player1_id).unwrap().as_slice()).unwrap();
-    prover.add_input(to_vec(&game.creation2.unwrap()).unwrap().as_slice()).unwrap();
+    prover.add_input_u32_slice(&to_vec(&game.player1_id).unwrap().as_slice());
+    prover.add_input_u32_slice(&to_vec(&game.creation1.unwrap()).unwrap().as_slice());
+    prover.add_input_u32_slice(&to_vec(&game.player1_id).unwrap().as_slice());
+    prover.add_input_u32_slice(&to_vec(&game.creation2.unwrap()).unwrap().as_slice());
 
     tracing::info!("Starting proof");
 
@@ -148,8 +148,11 @@ async fn commence_battle(game: &games::Game) {
 
     tracing::info!("Proof done!");
 
-    let receipt = receipt.get_journal().unwrap();
-    println!("Receipt: {:?}", receipt);
+    // let game_result: tenet_core::GameResult = from_slice(&receipt.get_journal().unwrap()).unwrap();
+
+    let vec = receipt.journal;
+    let committed_state: String = from_slice(&vec).unwrap();
+    println!("Receipt: {:?}", committed_state);
 
     // call the verify function with generated proof of battle
     // once battle is done, update the game document
@@ -346,68 +349,50 @@ pub async fn commit_outcome(
     (StatusCode::OK, out)
 }
 
-pub async fn prove_factors(
-    // this argument tells axum to parse the request body
-    Json(payload): Json<games::FactorsInput>,
-) -> impl IntoResponse {
-    println!("prove_factors");
+// fn do_factors_proof(payload: games::FactorsInput) -> Result<String, risc0_zkvm::host::Exception> {
+//     // Pick two numbers
+//     let a: u64 = payload.a;
+//     let b: u64 = payload.b;
 
-    let out = match do_factors_proof(payload) {
-        Ok(receipt) => receipt,
-        Err(_e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                String::from("bad proof load"),
-            )
-        }
-    };
-    (StatusCode::OK, out)
-}
+//     // Multiply them inside the ZKP
+//     // First, we make the prover, loading the 'multiply' method
+//     let multiply_src = std::fs::read(TENET_ARENA_1_PATH)
+//         .expect("Method code should be present at the specified path; did you use the correct *_PATH constant?");
+//     let mut prover = Prover::new(&multiply_src, TENET_ARENA_1_ID).expect(
+//         "Prover should be constructed from valid method source code and corresponding method ID",
+//     );
 
-fn do_factors_proof(payload: games::FactorsInput) -> Result<String, risc0_zkvm::host::Exception> {
-    // Pick two numbers
-    let a: u64 = payload.a;
-    let b: u64 = payload.b;
+//     // Next we send a & b to the guest
+//     prover.add_input(to_vec(&a).unwrap().as_slice());
+//     prover.add_input(to_vec(&b).unwrap().as_slice());
+//     // Run prover & generate receipt
+//     let receipt = prover.run()
+//         .expect("Valid code should be provable if it doesn't overflow the cycle limit. See `embed_methods_with_options` for information on adjusting maximum cycle count.");
 
-    // Multiply them inside the ZKP
-    // First, we make the prover, loading the 'multiply' method
-    let multiply_src = std::fs::read(TENET_ARENA_1_PATH)
-        .expect("Method code should be present at the specified path; did you use the correct *_PATH constant?");
-    let mut prover = Prover::new(&multiply_src, TENET_ARENA_1_ID).expect(
-        "Prover should be constructed from valid method source code and corresponding method ID",
-    );
+//     println!("Proof done!");
 
-    // Next we send a & b to the guest
-    prover.add_input(to_vec(&a).unwrap().as_slice()).unwrap();
-    prover.add_input(to_vec(&b).unwrap().as_slice()).unwrap();
-    // Run prover & generate receipt
-    let receipt = prover.run()
-        .expect("Valid code should be provable if it doesn't overflow the cycle limit. See `embed_methods_with_options` for information on adjusting maximum cycle count.");
+//     // // Extract journal of receipt (i.e. output c, where c = a * b)
+//     // let c: u64 = from_slice(
+//     //     &receipt
+//     //         .get_journal_vec()
+//     //         .expect("Journal should be available for valid receipts"),
+//     // )
+//     // .expect("Journal output should deserialize into the same types (& order) that it was written");
 
-    println!("Proof done!");
+//     // // Print an assertion
+//     // println!("I know the factors of {}, and I can prove it!", c);
 
-    // // Extract journal of receipt (i.e. output c, where c = a * b)
-    // let c: u64 = from_slice(
-    //     &receipt
-    //         .get_journal_vec()
-    //         .expect("Journal should be available for valid receipts"),
-    // )
-    // .expect("Journal output should deserialize into the same types (& order) that it was written");
+//     // // Here is where one would send 'receipt' over the network...
 
-    // // Print an assertion
-    // println!("I know the factors of {}, and I can prove it!", c);
+//     // // Verify receipt, panic if it's wrong
+//     // receipt.verify(MULTIPLY_ID).expect(
+//     //     "Code you have proven should successfully verify; did you specify the correct method ID?",
+//     // );
 
-    // // Here is where one would send 'receipt' over the network...
+//     let receipt = games::Receipt {
+//         journal: receipt.get_journal().unwrap().to_vec(),
+//         seal: receipt.get_seal().unwrap().to_vec(),
+//     };
 
-    // // Verify receipt, panic if it's wrong
-    // receipt.verify(MULTIPLY_ID).expect(
-    //     "Code you have proven should successfully verify; did you specify the correct method ID?",
-    // );
-
-    let receipt = games::Receipt {
-        journal: receipt.get_journal().unwrap().to_vec(),
-        seal: receipt.get_seal().unwrap().to_vec(),
-    };
-
-    Ok(base64::encode(bincode::serialize(&receipt).unwrap()))
-}
+//     Ok(base64::encode(bincode::serialize(&receipt).unwrap()))
+// }

@@ -21,5 +21,5 @@ chrono = "0.4" # Used for setting DateTimes
 
 tenet_core = { path = "../core" }
 methods = { path = "../methods" }
-risc0-zkvm = "0.11"
+risc0-zkvm = "0.12"
 dotenv = "0.15.0"

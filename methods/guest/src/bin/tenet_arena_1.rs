@@ -17,9 +17,9 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use risc0_zkvm_guest::env;
+use risc0_zkvm::guest::env;
 
-risc0_zkvm_guest::entry!(main);
+risc0_zkvm::guest::entry!(main);
 
 use tenet_core;
 
@@ -44,9 +44,6 @@ pub fn main() {
 
     let player2_id: String = env::read();
     let o_creation2: tenet_core::Deck = env::read();
-
-    println!("o_creation1 health: {}", o_creation1.cards[0].health);
-    println!("o_creation1 attack: {}", o_creation1.cards[0].attack);
 
     // Check if creations are valid
     if !is_valid(o_creation1) {
@@ -149,15 +146,25 @@ pub fn main() {
         result = String::from("TIE");
     }
 
-    let game_result = tenet_core::GameResult {
-        player1_id: player1_id,
-        player2_id: player2_id,
-        creation1_hash: creation1_hash,
-        creation2_hash: creation2_hash,
-        winner_creation_hash: winner_creation_hash,
-        winner_id: winner_id,
-        result: result,
-    };
+    // let game_result = tenet_core::GameResult {
+    //     player1_id: player1_id,
+    //     player2_id: player2_id,
+    //     creation1_hash: creation1_hash,
+    //     creation2_hash: creation2_hash,
+    //     winner_creation_hash: winner_creation_hash,
+    //     winner_id: winner_id,
+    //     result: result,
+    // };
 
-    env::commit(&game_result);
+    // let game_result = tenet_core::GameResult {
+    //     player1_id: String::from("player1_id"),
+    //     player2_id: String::from("player2_id"),
+    //     creation1_hash: String::from("creation1_hash"),
+    //     creation2_hash: String::from("creation2_hash"),
+    //     winner_creation_hash: String::from("winner_creation_hash"),
+    //     winner_id: String::from("winner_id"),
+    //     result: String::from("result")
+    // };
+
+    env::commit(&result);
 }

@@ -13,7 +13,7 @@ pub struct Deck {
     pub cards: [Card; CARDS_PER_DECK],
 }
 
-#[derive(Hash, Serialize, Deserialize)]
+#[derive(Debug, Hash, Serialize, Deserialize)]
 pub struct GameResult {
     pub player1_id: String,
     pub player2_id: String,
