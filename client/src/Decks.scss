@@ -1,7 +1,23 @@
+.decksContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0px 30px;
+}
+
+.headerWrapper {
+    display: flex;
+}
+
+.pageHeader {
+    color: white;
+    font-size: 23px;
+    font-weight: 600;
+}
+
 .cardsContainer {
     display: flex;
     gap: 25px;
-    padding: 0px 30px;
 }
 
 .cardEdit {
@@ -23,4 +39,9 @@
 .cardButton {
     margin-left: auto;
     margin-right: 0;
+}
+
+.errorMsg {
+    margin-top: 10px;
+    color: red;
 }

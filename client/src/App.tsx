@@ -4,8 +4,8 @@ import { Spinner } from "react-bootstrap";
 
 import "./App.scss";
 import { useAuth } from "./auth";
-import Deck from "./Deck";
-import { UserData } from "./models";
+import Decks from "./Decks";
+import { Deck, UserData } from "./models";
 
 // CSS
 
@@ -27,6 +27,15 @@ function App(props: AppProps) {
   useEffect(() => {
     if (auth && !auth.isLoading && auth.user) {
       // TODO: Load deck data
+      let newUserData: UserData = {
+        decks: [],
+      }
+      let playerDeckRaw: string | null = localStorage.getItem("playerDeck");
+      if (playerDeckRaw) {
+        let playerDeck: Deck = JSON.parse(playerDeckRaw);
+        newUserData.decks.push(playerDeck);
+      }
+      setUserData(newUserData);
       setIsLoading(false);
     }
   }, [auth]);
@@ -41,7 +50,7 @@ function App(props: AppProps) {
 
   return (
     <Routes>
-      <Route path="/deck" element={<Deck />} />
+      <Route path="/deck" element={<Decks userData={userData} />} />
       {/* <Route path="/play" element={<Compare userData={userData} setUserData={setUserData} />} /> */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

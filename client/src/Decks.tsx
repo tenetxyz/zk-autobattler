@@ -2,14 +2,27 @@ import React, { useEffect, useState } from "react";
 import { Card as RBCard, Form, Col, Row, Button } from "react-bootstrap";
 
 // CSS
+import "./Decks.scss";
+import { Card, Deck, UserData } from "./models";
 
-import "./Deck.scss";
-import { Card } from "./models";
+interface DecksProps {
+  userData: UserData | null;
+}
 
-interface DeckProps {}
-
-function Deck(props: DeckProps) {
+function Decks(props: DecksProps) {
   const [cards, setCards] = useState<Card[]>([
+    {
+      health: undefined,
+      attack: undefined,
+    },
+    {
+      health: undefined,
+      attack: undefined,
+    },
+    {
+      health: undefined,
+      attack: undefined,
+    },
     {
       health: undefined,
       attack: undefined,
@@ -19,6 +32,14 @@ function Deck(props: DeckProps) {
       attack: undefined,
     }
   ]);
+  const [modified, setModified] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string[]>(Array(cards.length).fill(""));
+
+  useEffect(() => {
+    if(props.userData){
+      setCards(props.userData.decks[0].cards);
+    }
+  }, [props.userData])
 
 
   const parseNumber = (value: string) => {
@@ -35,6 +56,10 @@ function Deck(props: DeckProps) {
     let newCards = [...cards];
     newCards[cardId].health = newValue;
     setCards(newCards);
+    setModified(true);
+    let newErrorMsgs = [...errorMsg];
+    newErrorMsgs[cardId] = "";
+    setErrorMsg(newErrorMsgs);
   }
 
   const onAttackValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +68,10 @@ function Deck(props: DeckProps) {
     let newCards = [...cards];
     newCards[cardId].attack = newValue;
     setCards(newCards);
+    setModified(true);
+    let newErrorMsgs = [...errorMsg];
+    newErrorMsgs[cardId] = "";
+    setErrorMsg(newErrorMsgs);
   }
 
   const filterNumbers = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -51,8 +80,47 @@ function Deck(props: DeckProps) {
     }
   }
 
-  console.log("rendering");
+  const validateCards = (cards: Card[]) => {
+    let isValid = true;
+    let newErrorMsgs = [...errorMsg];
+    cards.forEach((card, index) => {
+      if(card.health === undefined || card.attack === undefined){
+        newErrorMsgs[index] = "All cards must have a health and attack value.";
+        isValid = false;
+      } else {
+        if(card.health === 0){
+          newErrorMsgs[index] = "A card's health cannot be 0.";
+          isValid = false;
+        }
+        let sum = card.health + card.attack;
+        if(sum !== 10){
+          newErrorMsgs[index] = "The sum of a card's health and attack must equal 10.";
+          isValid = false;
+        }
+      }
+    });
+    setErrorMsg(newErrorMsgs);
+    return isValid;
+  }
+
+  const saveCardClicked = () => {
+    if(validateCards(cards)){
+      let playerDeck: Deck = {
+        cards: cards
+      }
+      localStorage.setItem("playerDeck", JSON.stringify(playerDeck));
+      setModified(false);
+    }
+  }
+
   return (
+    <div className="decksContainer">
+      <div className="headerWrapper">
+      <p className="pageHeader">Your Deck</p>
+      {modified && <div className="cardButton">
+                <Button variant="primary" onClick={saveCardClicked}>Save</Button>
+      </div>}
+      </div>
     <div className="cardsContainer">
       {cards.map((card, index) => {
         return (
@@ -74,16 +142,15 @@ function Deck(props: DeckProps) {
                 <p className="cardKey">Attack</p>
                 <Form.Control id={"card-attack-" + index} min="0" autoComplete="off" className="cardValue" type="number" value={card.attack === undefined ? "" : card.attack} onKeyPress={filterNumbers} onChange={onAttackValueChange} placeholder="0" />
               </div>
-              <div className="cardButton">
-                <Button variant="primary">Save</Button>
-              </div>
             </div>
+            {errorMsg[index] && <p className="errorMsg">{errorMsg[index]}</p>}
           </RBCard.Body>
         </RBCard>
         )
       })}
     </div>
+    </div>
   );
 }
 
-export default Deck;
+export default Decks;
