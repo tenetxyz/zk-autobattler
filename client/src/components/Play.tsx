@@ -82,7 +82,6 @@ function Play(props: PlayProps) {
 
       <div className="pageHeaderWrapper">
         <p className="pageHeader">NPCs</p>
-        {/* {isLoading && <Spinner style={{marginLeft: "20px"}} animation="border" variant={"light"} />} */}
       </div>
       <div className="cardsContainer">
         {NPCS.map((npcInfo, index) => {
@@ -109,6 +108,21 @@ function Play(props: PlayProps) {
             </RBCard>
           );
         })}
+      </div>
+
+      <div className="pageHeaderWrapper">
+        <p className="pageHeader">Humans</p>
+      </div>
+      <div className="cardsContainer">
+      <Button variant="success">Play Random</Button>
+      <Button variant="primary">Join Lobby</Button>
+      <Button variant="warning">Create Lobby</Button>
+      </div>
+
+      <div className="pageHeaderWrapper">
+        <p className="pageHeader">Your Games</p>
+      </div>
+      <div className="cardsContainer">
       </div>
     </div>
   );
