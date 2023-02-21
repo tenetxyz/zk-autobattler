@@ -1,6 +1,6 @@
 export type Card = {
-    health: number;
-    attack: number;
+    health: number | undefined;
+    attack: number | undefined;
 }
 
 export type Deck = {
