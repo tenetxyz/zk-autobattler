@@ -4,7 +4,7 @@ import {Spinner} from "react-bootstrap";
 
 const serverAuthProvider = {
   signIn(successCallback: any, errorCallback: any){
-    // generate a random player id
+    // TODO: Implement this
     let playerId = Math.random().toString(36).substring(7);
     localStorage.setItem("playerId", playerId);
     successCallback(playerId);
