@@ -1,6 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use tokio;
 
 // DB
 use mongodb::bson::doc;
@@ -151,9 +152,14 @@ async fn commence_battle(game: &games::Game) -> risc0_zkvm::Receipt {
     return receipt;
 }
 
-async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game, game_result: &tenet_core::GameResult) {
+async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game, receipt: &risc0_zkvm::Receipt) {
+    // Verify receipt
+    receipt.verify(TENET_ARENA_1_ID).expect("Receipt should be valid for the given method ID");
+
     // battle has finished update the game document
     // remove the user creations and add the battle result
+    let vec = &receipt.journal;
+    let game_result: tenet_core::GameResult = from_slice(vec).unwrap();
 
     // Sanity check
     assert!(*game.creation1_hash.as_ref().unwrap() == game_result.creation1_hash);
@@ -185,6 +191,13 @@ async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game,
         .await
         .unwrap();
 
+}
+
+async fn slow_operation() -> String {
+    // Do some heavy async computation here
+    // For example, let's just sleep for 5 seconds
+    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+    "Hello from the slow operation!".to_owned()
 }
 
 // TODO: Which hash function to use?
@@ -296,8 +309,11 @@ pub async fn play_game(
             return (StatusCode::BAD_REQUEST, Json(response));
         }
 
-        if game.state == "playing" || game.state == "complete" {
-            response.error = String::from("Game is in progress or already over");
+        if game.state == "playing" {
+            response.error = String::from("Game is in progress");
+            return (StatusCode::BAD_REQUEST, Json(response));
+        } else if game.state == "complete" {
+            response.error = String::from("Game is finished");
             return (StatusCode::BAD_REQUEST, Json(response));
         }
 
@@ -320,14 +336,14 @@ pub async fn play_game(
                         "state": "playing",
                     }
                 });
-                // TODO: Catch error in proof of battle
-                // TODO: Should happen on separate thread?
-                let receipt = commence_battle(&game).await;
-                let vec = receipt.journal;
-                let committed_state: tenet_core::GameResult = from_slice(&vec).unwrap();
-                // println!("Receipt: {:?}", committed_state);
                 let games_ref = games.clone();
-                commit_game_result(games_ref, &game, &committed_state).await;
+                let game_thread = game.clone();
+                tokio::task::spawn(async move {
+                    // TODO: Catch error in proof of battle
+                    let receipt = commence_battle(&game_thread).await;
+                    commit_game_result(games_ref, &game_thread, &receipt).await;
+                });
+                // // println!("Receipt: {:?}", committed_state);
             } else {
                 new_game_doc = Some(doc! {
                     "$set": {
@@ -347,14 +363,13 @@ pub async fn play_game(
                         "state": "playing",
                     }
                 });
-                // TODO: Catch error in proof of battle
-                // TODO: Should happen on separate thread?
-                let receipt = commence_battle(&game).await;
-                let vec = receipt.journal;
-                let committed_state: tenet_core::GameResult = from_slice(&vec).unwrap();
-                // println!("Receipt: {:?}", committed_state);
                 let games_ref = games.clone();
-                commit_game_result(games_ref, &game, &committed_state).await;
+                let game_thread = game.clone();
+                tokio::task::spawn(async move {
+                    // TODO: Catch error in proof of battle
+                    let receipt = commence_battle(&game_thread).await;
+                    commit_game_result(games_ref, &game_thread, &receipt).await;
+                });
             } else {
                 // update game state
                 new_game_doc = Some(doc! {
