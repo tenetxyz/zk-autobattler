@@ -1,2 +1,20 @@
 @use 'styles';
 
+.pageContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0px 30px;
+    height: 100%;
+    margin-bottom: 40px;
+}
+
+.pageHeaderWrapper {
+    display: flex;
+}
+
+.pageHeader {
+    color: white;
+    font-size: 23px;
+    font-weight: 600;
+}

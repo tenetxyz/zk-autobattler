@@ -7,6 +7,7 @@ import { Card, Deck, UserData } from "./models";
 
 interface DecksProps {
   userData: UserData | null;
+  setUserData: any;
 }
 
 function Decks(props: DecksProps) {
@@ -109,13 +110,18 @@ function Decks(props: DecksProps) {
         cards: cards
       }
       localStorage.setItem("playerDeck", JSON.stringify(playerDeck));
+      if(props.userData){
+        let newUserData: UserData | null = {...props.userData};
+        newUserData.decks[0] = playerDeck;
+        props.setUserData(newUserData);
+      }
       setModified(false);
     }
   }
 
   return (
-    <div className="decksContainer">
-      <div className="headerWrapper">
+    <div className="pageContainer">
+      <div className="pageHeaderWrapper">
       <p className="pageHeader">Your Deck</p>
       {modified && <div className="cardButton">
                 <Button variant="primary" onClick={saveCardClicked}>Save</Button>

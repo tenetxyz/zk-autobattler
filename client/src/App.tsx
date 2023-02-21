@@ -6,6 +6,7 @@ import "./App.scss";
 import { useAuth } from "./auth";
 import Decks from "./Decks";
 import { Deck, UserData } from "./models";
+import Study from "./Study";
 
 // CSS
 
@@ -26,7 +27,6 @@ function App(props: AppProps) {
 
   useEffect(() => {
     if (auth && !auth.isLoading && auth.user) {
-      // TODO: Load deck data
       let newUserData: UserData = {
         decks: [],
       }
@@ -50,8 +50,8 @@ function App(props: AppProps) {
 
   return (
     <Routes>
-      <Route path="/deck" element={<Decks userData={userData} />} />
-      {/* <Route path="/play" element={<Compare userData={userData} setUserData={setUserData} />} /> */}
+      <Route path="/deck" element={<Decks userData={userData} setUserData={setUserData} />} />
+      <Route path="/study" element={<Study userData={userData} />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

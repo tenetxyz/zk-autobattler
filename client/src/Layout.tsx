@@ -6,6 +6,8 @@ import Landing from "./Landing";
 import App from "./App";
 import Header from "./Header";
 
+import "./Layout.scss";
+
 function Layout() {
   const [userData, setUserData] = useState<any>(null);
 
@@ -15,7 +17,7 @@ function Layout() {
         <Route
           path="/"
           element={
-            <div>
+            <div className="layoutWrapper">
               <Header />
               <Landing />
             </div>
@@ -25,7 +27,7 @@ function Layout() {
           path="*"
           element={
             <RequireAuth>
-              <div>
+              <div className="layoutWrapper">
                 <Header />
                 <App />
               </div>

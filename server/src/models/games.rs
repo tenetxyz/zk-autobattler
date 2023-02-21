@@ -63,6 +63,7 @@ pub struct Game {
     pub winner_creation_hash: Option<String>,
     pub winner_id: Option<String>,
     pub state: String,
+    pub result: Option<String>,
 }
 
 #[derive(Deserialize)]
