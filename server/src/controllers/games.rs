@@ -193,13 +193,6 @@ async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game,
 
 }
 
-async fn slow_operation() -> String {
-    // Do some heavy async computation here
-    // For example, let's just sleep for 5 seconds
-    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-    "Hello from the slow operation!".to_owned()
-}
-
 // TODO: Which hash function to use?
 pub async fn play_game(
     // this argument tells axum to parse the request body
