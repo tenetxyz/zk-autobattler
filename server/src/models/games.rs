@@ -16,6 +16,13 @@ pub struct JoinGameInput {
 }
 
 #[derive(Serialize)]
+pub struct GetGamesOutput {
+    pub games: Vec<Game>,
+    pub error: String,
+}
+
+
+#[derive(Serialize)]
 pub struct JoinGameOutput {
     pub lobby_id: String,
     pub error: String
@@ -41,7 +48,7 @@ pub struct Lobby {
     pub lobby_id: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Game {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,

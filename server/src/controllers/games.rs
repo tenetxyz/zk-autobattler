@@ -6,7 +6,7 @@ use tokio;
 // DB
 use mongodb::bson::doc;
 use mongodb::bson::Document;
-use mongodb::{Database, Collection};
+use mongodb::{Collection, Database};
 
 // ZK VM
 use risc0_zkvm::serde::{from_slice, to_vec};
@@ -20,15 +20,42 @@ use crate::models::games;
 pub async fn get_all_games(State(db): State<Database>) -> impl IntoResponse {
     tracing::info!("get_all_games called");
 
-    let out = "Done";
+    let games = db.collection::<Document>("game");
+    // get all games that have state complete
+    let mut cursor = games
+        .find(
+            doc! {
+                "state": "complete"
+            },
+            None,
+        )
+        .await
+        .unwrap();
+    let mut games: Vec<games::Game> = Vec::new();
 
-    (StatusCode::OK, out)
+    // go through each document
+    while cursor.advance().await.unwrap() {
+        let game = bson::to_bson(&cursor.deserialize_current().unwrap()).unwrap();
+        let mut game = bson::from_bson::<games::Game>(game).unwrap();
+        game.id = None;
+        game.creation1 = None;
+        game.creation2 = None;
+        game.lobby_id = String::from("");
+        games.push(game);
+    }
+
+    let response = games::GetGamesOutput {
+        games: games,
+        error: String::from(""),
+    };
+
+    (StatusCode::OK, Json(response))
 }
 
 pub async fn join_game(
     // this argument tells axum to parse the request body
     State(db): State<Database>,
-    Json(payload): Json<games::JoinGameInput>
+    Json(payload): Json<games::JoinGameInput>,
 ) -> impl IntoResponse {
     tracing::info!("join_game called");
 
@@ -152,9 +179,15 @@ async fn commence_battle(game: &games::Game) -> risc0_zkvm::Receipt {
     return receipt;
 }
 
-async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game, receipt: &risc0_zkvm::Receipt) {
+async fn commit_game_result(
+    games_ref: Collection<Document>,
+    game: &games::Game,
+    receipt: &risc0_zkvm::Receipt,
+) {
     // Verify receipt
-    receipt.verify(&TENET_ARENA_1_ID).expect("Receipt should be valid for the given method ID");
+    receipt
+        .verify(&TENET_ARENA_1_ID)
+        .expect("Receipt should be valid for the given method ID");
 
     // battle has finished update the game document
     // remove the user creations and add the battle result
@@ -173,7 +206,10 @@ async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game,
     };
 
     if !game_result.winner_creation_hash.is_empty() {
-        new_game_doc.insert("winner_creation_hash", game_result.winner_creation_hash.clone());
+        new_game_doc.insert(
+            "winner_creation_hash",
+            game_result.winner_creation_hash.clone(),
+        );
         new_game_doc.insert("winner_id", game_result.winner_id.clone());
     }
 
@@ -190,14 +226,13 @@ async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game,
         )
         .await
         .unwrap();
-
 }
 
 // TODO: Which hash function to use?
 pub async fn play_game(
     // this argument tells axum to parse the request body
     State(db): State<Database>,
-    Json(payload): Json<games::PlayGameInput>
+    Json(payload): Json<games::PlayGameInput>,
 ) -> impl IntoResponse {
     tracing::info!("play_game called");
 
@@ -395,7 +430,7 @@ pub async fn play_game(
 pub async fn commit_outcome(
     // this argument tells axum to parse the request body
     State(db): State<Database>,
-    Json(payload): Json<games::CommitOutcomeInput>
+    Json(payload): Json<games::CommitOutcomeInput>,
 ) -> impl IntoResponse {
     tracing::info!("commit_outcome called");
 
