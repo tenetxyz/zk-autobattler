@@ -1,4 +1,3 @@
-// this is the page for users that are not logged in
 import React, { useEffect, useState } from "react";
 import { ForwardAuth, useAuth } from "../auth";
 import { UserData } from "../models";

@@ -12,14 +12,20 @@ function Header(props: HeaderProps) {
   const location = useLocation();
 
   const getPageItems = () => {
-    if (location.pathname === "/deck") {
+    if (location.pathname !== "/") {
       return (
+        <div className="headerItemWrapper">
+        <p className="headerItem" onClick={() => navigate("/deck")}>
+          Deck
+        </p>
+        <p className="headerItem" onClick={() => navigate("/play")}>
+          Play
+        </p>
         <p className="headerItem" onClick={() => navigate("/study")}>
           Study
         </p>
+        </div>
       );
-    } else if (location.pathname === "/study") {
-      return <p className="headerItem"  onClick={() => navigate("/deck")}>Deck</p>;
     }
     return null;
   };

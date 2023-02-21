@@ -8,6 +8,7 @@ import Decks from "./components/Decks";
 import Study from "./components/Study";
 
 import { Deck, UserData } from "./models";
+import Play from "./components/Play";
 
 // CSS
 
@@ -53,6 +54,7 @@ function App(props: AppProps) {
     <Routes>
       <Route path="/deck" element={<Decks userData={userData} setUserData={setUserData} />} />
       <Route path="/study" element={<Study userData={userData} />} />
+      <Route path="/play" element={<Play userData={userData} />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

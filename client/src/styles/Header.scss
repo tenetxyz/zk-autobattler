@@ -30,6 +30,12 @@
      margin-left: auto;
 }
 
+.headerItemWrapper {
+    display: flex;
+    gap: 25px;
+    align-items: center;
+}
+
 .headerItem {
     font-size: 18px;
     color: #F5EBBB;
