@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider, RequireAuth } from "./auth";
 
-import Landing from "./Landing";
+import Landing from "./components/Landing";
 import App from "./App";
-import Header from "./Header";
+import Header from "./components/Header";
 
 import "./Layout.scss";
 

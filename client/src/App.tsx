@@ -4,9 +4,10 @@ import { Spinner } from "react-bootstrap";
 
 import "./App.scss";
 import { useAuth } from "./auth";
-import Decks from "./Decks";
+import Decks from "./components/Decks";
+import Study from "./components/Study";
+
 import { Deck, UserData } from "./models";
-import Study from "./Study";
 
 // CSS
 

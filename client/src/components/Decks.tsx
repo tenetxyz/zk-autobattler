@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Card as RBCard, Form, Col, Row, Button } from "react-bootstrap";
 
 // CSS
-import "./Decks.scss";
-import { Card, Deck, UserData } from "./models";
+import "../styles/Decks.scss";
+import { Card, Deck, UserData } from "../models";
 
 interface DecksProps {
   userData: UserData | null;

@@ -1,6 +1,6 @@
 // this is the page for users that are not logged in
 import React, {useState} from "react";
-import {ForwardAuth, useAuth} from "./auth";
+import {ForwardAuth, useAuth} from "../auth";
 
 // import classnames from "classnames";
 // import css from "./Landing.module.scss";

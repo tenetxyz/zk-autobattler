@@ -1,17 +1,18 @@
 // this is the page for users that are not logged in
 import React, { useEffect, useState } from "react";
-import { ForwardAuth, useAuth } from "./auth";
-import { UserData } from "./models";
-import { apiFetch } from "./utils";
+import { ForwardAuth, useAuth } from "../auth";
+import { UserData } from "../models";
+import { apiFetch } from "../utils";
 
 import { AgGridReact } from "ag-grid-react";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
-import "./Study.scss";
 import { Spinner } from "react-bootstrap";
 import { ColumnApi, GridApi, GridReadyEvent } from "ag-grid-community";
+
+import "../styles/Study.scss";
 
 interface StudyProps {
   userData: UserData | null;
@@ -44,7 +45,6 @@ function Study(props: StudyProps) {
         {},
         (body: any, responseData: any) => {
           setAllGames(responseData.games);
-          // setIsLoading(false);
         },
         (errorData: any, errorMsg: string) => {
           console.error(errorMsg);

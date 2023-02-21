@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { useAuth } from "./auth";
-import "./Header.scss";
+import { useAuth } from "../auth";
+import "../styles/Header.scss";
 
 type HeaderProps = {};
 
