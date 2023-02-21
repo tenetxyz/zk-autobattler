@@ -1,0 +1,25 @@
+.cardsContainer {
+    display: flex;
+    gap: 25px;
+}
+
+.cardEdit {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cardField {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.cardValue {
+    width: 60% !important;
+}
+
+.errorMsg {
+    margin-top: 10px;
+    color: red;
+}

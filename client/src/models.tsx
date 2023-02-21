@@ -11,3 +11,8 @@ export type Deck = {
 export type UserData = {
   decks: Deck[];
 };
+
+export type NPC = {
+  name: string;
+  deck: Deck;
+}
