@@ -44,7 +44,7 @@ pub struct Lobby {
 #[derive(Serialize, Deserialize)]
 pub struct Game {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    id: Option<ObjectId>,
+    pub id: Option<ObjectId>,
     pub player1_id: String,
     pub player2_id: String,
     pub lobby_id: String,

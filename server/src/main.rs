@@ -5,7 +5,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 // Web Server
 use axum::{
-    extract::Extension,
+    extract::State,
     routing::{get, post},
     Router,
 };
@@ -57,6 +57,7 @@ async fn main() {
 
     let cors = CorsLayer::new().allow_origin(Any);
 
+
     let games_routes = Router::new()
         .route("/", get(controllers::games::get_all_games))
         .route("/join", post(controllers::games::join_game))
@@ -69,7 +70,7 @@ async fn main() {
         .route("/", get(root))
         .nest("/games", games_routes)
         .layer(cors)
-        .layer(Extension(db));
+        .with_state(db);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
     tracing::info!("listening on {}", addr);

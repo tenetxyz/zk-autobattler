@@ -1,22 +1,22 @@
-use axum::{extract::Extension, http::StatusCode, response::IntoResponse, Json};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 // DB
 use mongodb::bson::doc;
 use mongodb::bson::Document;
-use mongodb::Database;
+use mongodb::{Database, Collection};
 
 // ZK VM
-use risc0_zkvm::Prover;
 use risc0_zkvm::serde::{from_slice, to_vec};
+use risc0_zkvm::Prover;
 
 // Custom Modules
 use methods::{TENET_ARENA_1_ID, TENET_ARENA_1_PATH};
 
 use crate::models::games;
 
-pub async fn get_all_games(Extension(db): Extension<Database>) -> impl IntoResponse {
+pub async fn get_all_games(State(db): State<Database>) -> impl IntoResponse {
     tracing::info!("get_all_games called");
 
     let out = "Done";
@@ -26,8 +26,8 @@ pub async fn get_all_games(Extension(db): Extension<Database>) -> impl IntoRespo
 
 pub async fn join_game(
     // this argument tells axum to parse the request body
-    Json(payload): Json<games::JoinGameInput>,
-    Extension(db): Extension<Database>,
+    State(db): State<Database>,
+    Json(payload): Json<games::JoinGameInput>
 ) -> impl IntoResponse {
     tracing::info!("join_game called");
 
@@ -126,7 +126,7 @@ pub async fn join_game(
     return (StatusCode::OK, Json(response));
 }
 
-async fn commence_battle(game: &games::Game) {
+async fn commence_battle(game: &games::Game) -> risc0_zkvm::Receipt {
     // start the battle with both user inputs
     let arena_src = std::fs::read(TENET_ARENA_1_PATH)
     .expect("Method code should be present at the specified path; did you use the correct *_PATH constant?");
@@ -148,20 +148,50 @@ async fn commence_battle(game: &games::Game) {
 
     tracing::info!("Proof done!");
 
-    let vec = receipt.journal;
-    let committed_state: tenet_core::GameResult = from_slice(&vec).unwrap();
-    println!("Receipt: {:?}", committed_state);
+    return receipt;
+}
 
-    // call the verify function with generated proof of battle
-    // once battle is done, update the game document
+async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game, game_result: &tenet_core::GameResult) {
+    // battle has finished update the game document
     // remove the user creations and add the battle result
+
+    // Sanity check
+    assert!(*game.creation1_hash.as_ref().unwrap() == game_result.creation1_hash);
+    assert!(*game.creation2_hash.as_ref().unwrap() == game_result.creation2_hash);
+
+    let mut new_game_doc = doc! {
+        "winner_creation_hash": null,
+        "winner_id": null,
+        "result": game_result.result.clone(),
+        "state": "complete"
+    };
+
+    if !game_result.winner_creation_hash.is_empty() {
+        new_game_doc.insert("winner_creation_hash", game_result.winner_creation_hash.clone());
+        new_game_doc.insert("winner_id", game_result.winner_id.clone());
+    }
+
+    let update_result = games_ref
+        .update_one(
+            doc! {
+                "_id": game.id,
+            },
+            doc! {
+                "$set": new_game_doc,
+                "$unset": { "creation1": "", "creation2": "" }
+            },
+            None,
+        )
+        .await
+        .unwrap();
+
 }
 
 // TODO: Which hash function to use?
 pub async fn play_game(
     // this argument tells axum to parse the request body
-    Json(payload): Json<games::PlayGameInput>,
-    Extension(db): Extension<Database>,
+    State(db): State<Database>,
+    Json(payload): Json<games::PlayGameInput>
 ) -> impl IntoResponse {
     tracing::info!("play_game called");
 
@@ -237,6 +267,7 @@ pub async fn play_game(
             "winner_creation_hash": null,
             "winner_id": null,
             "state": null,
+            "result": null
         };
 
         if is_player_1 {
@@ -280,14 +311,23 @@ pub async fn play_game(
 
         // Check if creation exists
         if game.state == "player1Turn" {
-            if game.creation1_hash.is_some() && creation_hash == *game.creation1_hash.as_ref().unwrap() {
+            if game.creation1_hash.is_some()
+                && creation_hash == *game.creation1_hash.as_ref().unwrap()
+            {
                 // COMMENCE AUTO BATTLE
                 new_game_doc = Some(doc! {
                     "$set": {
                         "state": "playing",
                     }
                 });
-                commence_battle(&game).await;
+                // TODO: Catch error in proof of battle
+                // TODO: Should happen on separate thread?
+                let receipt = commence_battle(&game).await;
+                let vec = receipt.journal;
+                let committed_state: tenet_core::GameResult = from_slice(&vec).unwrap();
+                // println!("Receipt: {:?}", committed_state);
+                let games_ref = games.clone();
+                commit_game_result(games_ref, &game, &committed_state).await;
             } else {
                 new_game_doc = Some(doc! {
                     "$set": {
@@ -298,14 +338,23 @@ pub async fn play_game(
                 });
             }
         } else if game.state == "player2Turn" {
-            if  game.creation2_hash.is_some() && creation_hash == *game.creation2_hash.as_ref().unwrap() {
+            if game.creation2_hash.is_some()
+                && creation_hash == *game.creation2_hash.as_ref().unwrap()
+            {
                 // COMMENCE AUTO BATTLE
                 new_game_doc = Some(doc! {
                     "$set": {
                         "state": "playing",
                     }
                 });
-                commence_battle(&game).await;
+                // TODO: Catch error in proof of battle
+                // TODO: Should happen on separate thread?
+                let receipt = commence_battle(&game).await;
+                let vec = receipt.journal;
+                let committed_state: tenet_core::GameResult = from_slice(&vec).unwrap();
+                // println!("Receipt: {:?}", committed_state);
+                let games_ref = games.clone();
+                commit_game_result(games_ref, &game, &committed_state).await;
             } else {
                 // update game state
                 new_game_doc = Some(doc! {
@@ -337,8 +386,8 @@ pub async fn play_game(
 
 pub async fn commit_outcome(
     // this argument tells axum to parse the request body
-    Json(payload): Json<games::CommitOutcomeInput>,
-    Extension(db): Extension<Database>,
+    State(db): State<Database>,
+    Json(payload): Json<games::CommitOutcomeInput>
 ) -> impl IntoResponse {
     tracing::info!("commit_outcome called");
 
@@ -346,4 +395,3 @@ pub async fn commit_outcome(
 
     (StatusCode::OK, out)
 }
-

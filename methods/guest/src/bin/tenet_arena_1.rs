@@ -56,6 +56,16 @@ pub fn main() {
     let mut creation1 = o_creation1.clone();
     let mut creation2 = o_creation2.clone();
 
+    let creation1_hash = o_creation1;
+    let mut s = DefaultHasher::new();
+    creation1_hash.hash(&mut s);
+    let creation1_hash = s.finish().to_string();
+
+    let creation2_hash = o_creation2;
+    let mut s = DefaultHasher::new();
+    creation2_hash.hash(&mut s);
+    let creation2_hash = s.finish().to_string();
+
     // let creation1_hash ;
     // let creation2_hash ;
     let mut winner_id = String::from("");
@@ -119,16 +129,6 @@ pub fn main() {
             }
         }
     }
-
-    let creation1_hash = o_creation1;
-    let mut s = DefaultHasher::new();
-    creation1_hash.hash(&mut s);
-    let creation1_hash = s.finish().to_string();
-
-    let creation2_hash = o_creation2;
-    let mut s = DefaultHasher::new();
-    creation2_hash.hash(&mut s);
-    let creation2_hash = s.finish().to_string();
 
     let mut result = String::from("");
     if player1_card.is_some(){
