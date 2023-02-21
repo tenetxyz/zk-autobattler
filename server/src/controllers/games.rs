@@ -154,7 +154,7 @@ async fn commence_battle(game: &games::Game) -> risc0_zkvm::Receipt {
 
 async fn commit_game_result(games_ref: Collection<Document>, game: &games::Game, receipt: &risc0_zkvm::Receipt) {
     // Verify receipt
-    receipt.verify(TENET_ARENA_1_ID).expect("Receipt should be valid for the given method ID");
+    receipt.verify(&TENET_ARENA_1_ID).expect("Receipt should be valid for the given method ID");
 
     // battle has finished update the game document
     // remove the user creations and add the battle result

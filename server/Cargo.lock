@@ -525,6 +525,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "directories"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f51c5d4ddabd36886dd3e1438cb358cdcb0d7c499cb99cb4ac2e38e18b5cb210"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
+name = "dirs-sys"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b1d1d91c932ef41c0f2663aa8b0ca0342d444d842c06914aa0a7e352d0bada6"
+dependencies = [
+ "libc",
+ "redox_users",
+ "winapi",
+]
+
+[[package]]
 name = "dotenv"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -797,15 +817,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "home"
-version = "0.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "747309b4b440c06d57b0b25f2aee03ee9b5e5397d288c60e21fc709bb98a7408"
-dependencies = [
- "winapi",
-]
-
-[[package]]
 name = "hostname"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1044,6 +1055,9 @@ name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+dependencies = [
+ "spin",
+]
 
 [[package]]
 name = "libc"
@@ -1601,6 +1615,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "redox_users"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b033d837a7cf162d7993aded9304e30a83213c648b6e389db233191f891e5c2b"
+dependencies = [
+ "getrandom",
+ "redox_syscall",
+ "thiserror",
+]
+
+[[package]]
 name = "regex"
 version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1699,15 +1724,13 @@ dependencies = [
 
 [[package]]
 name = "risc0-build"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a405527bb0ce8fc44e3e0052469144b28dd8b5450d6fc485ba18a2d2e4a2b043"
+checksum = "728f9e26378a4d4c245e02c08a923ce12f3b3f4c192809f1b595a639059fcc0b"
 dependencies = [
  "cargo_metadata",
+ "directories",
  "downloader",
- "home",
- "risc0-circuit-rv32im",
- "risc0-zkp",
  "risc0-zkvm",
  "risc0-zkvm-platform",
  "serde",
@@ -1718,41 +1741,77 @@ dependencies = [
 ]
 
 [[package]]
-name = "risc0-circuit-rv32im"
-version = "0.12.0"
+name = "risc0-build-kernel"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aab5879996f9823b70a4fafd2703942d4756799c03276efc36fd843b5ab679e7"
+checksum = "ea5227365a8906b0d4c9bb5342469291e1855c4622c3066e20d386c5ed1a2094"
+dependencies = [
+ "cc",
+ "directories",
+ "glob",
+ "hex",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
+name = "risc0-circuit-rv32im"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c9cf33f60dad91229dae6c34f2f384f6868163954f7c89e979295358e430994"
 dependencies = [
  "anyhow",
- "cc",
- "glob",
  "log",
  "rand",
  "rayon",
+ "risc0-core",
+ "risc0-sys",
  "risc0-zkp",
  "risc0-zkvm-platform",
- "sha2",
  "tracing",
 ]
 
 [[package]]
-name = "risc0-zeroio"
-version = "0.12.0"
+name = "risc0-core"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59c4ae9cf05661597fa33ae774cf27a8f1ef9b9574a49e3c8d94d545192f2dab"
+checksum = "6a965da4e723f4fc57d8dd9f330cbbac17a096ce83403ed670a8b9da580db9dd"
+dependencies = [
+ "bytemuck",
+ "rand_core",
+]
+
+[[package]]
+name = "risc0-sys"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3775fe76abe06172e7096d1548cb802244872c0aae4c2d670d63cc7a2e109ac0"
+dependencies = [
+ "cc",
+ "glob",
+ "risc0-build-kernel",
+ "risc0-core",
+]
+
+[[package]]
+name = "risc0-zeroio"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf0e17d872b00a7e377ac39784a0a9c1af85447b3f6a948300282d931a69cb95"
 dependencies = [
  "bytemuck",
  "impl-trait-for-tuples",
  "log",
  "risc0-zeroio-derive",
+ "risc0-zkvm-platform",
  "tracing",
 ]
 
 [[package]]
 name = "risc0-zeroio-derive"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b700cad0540e85b1de6eaffd692a9cd76f57db21e399c07c656bb3d274ea951"
+checksum = "a3f4c4c91c76ca39af85e52866079e21216e1e454911a0e8f7ff287c33c50723"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1761,19 +1820,25 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkp"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a784efbf2967168ccdc93ffff150bfe9b167234735dea7c0a85ee7185dd4a6a4"
+checksum = "596ae6f4db68773df7669d090cff513db3e33aa87595e8a966053af5f471d0f8"
 dependencies = [
  "anyhow",
  "bytemuck",
+ "digest",
+ "hex",
+ "lazy_static",
  "log",
  "ndarray",
  "paste",
  "rand",
  "rand_core",
  "rayon",
+ "risc0-core",
+ "risc0-sys",
  "risc0-zeroio",
+ "risc0-zkvm-platform",
  "serde",
  "sha2",
  "tracing",
@@ -1781,14 +1846,15 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkvm"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71e29d2c652dc7f7de1e82a7d4a95670b853f64ac54366c35130566860b51aea"
+checksum = "418716999a0d02079ac7b87aeb66a955f7b13c4f624a99a546c02317cc89f564"
 dependencies = [
  "anyhow",
  "bytemuck",
  "cfg-if",
  "elf",
+ "hex",
  "lazy-regex",
  "log",
  "num-derive",
@@ -1796,6 +1862,7 @@ dependencies = [
  "rand",
  "rayon",
  "risc0-circuit-rv32im",
+ "risc0-core",
  "risc0-zeroio",
  "risc0-zkp",
  "risc0-zkvm-platform",
@@ -1806,9 +1873,9 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkvm-platform"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ae26c13042eaf4d45655883b01c778aeebed68b8d0f44970d08e111074654d9"
+checksum = "127b7e9c7a8ee290447294bffba7357f90808345ac75199edafe62a2530b54a7"
 
 [[package]]
 name = "rustc_version"
