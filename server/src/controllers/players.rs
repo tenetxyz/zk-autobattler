@@ -73,6 +73,9 @@ pub async fn get_player_games(State(db): State<Database>, player_info: Query<gam
             if lobby.player2_id.is_some() {
                 game.player2_id = lobby.player2_id.unwrap().clone();
             }
+            if !game.player1_id.is_empty() && !game.player2_id.is_empty() {
+                game.state = "setup".to_string();
+            }
 
             games.push(game);
         }
