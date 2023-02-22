@@ -137,7 +137,7 @@ function Play(props: PlayProps) {
       name: "Refresh",
       onClick: refreshPlayerGames,
     }],
-    // complete: [],
+    complete: [],
   };
 
   const [columnDefs] = useState([
@@ -206,6 +206,7 @@ function Play(props: PlayProps) {
     if (playerGames) {
       // console.log(playerGames);
       gridApi?.setRowData(playerGames);
+      setRowSelected(null);
       setIsLoading(false);
       gridApi?.hideOverlay();
     }
