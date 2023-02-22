@@ -64,15 +64,6 @@ const NPCS: NPC[] = [
   },
 ];
 
-const STATE_TO_ACTIONS: any = {
-  lobby: ["Copy Lobby ID"],
-  setup: ["Add Deck"],
-  player1Turn: ["Add Deck"],
-  player2Turn: ["Add Deck"],
-  playing: ["Refresh"],
-  complete: [],
-};
-
 function Play(props: PlayProps) {
   const auth = useAuth();
 
@@ -80,6 +71,57 @@ function Play(props: PlayProps) {
   const [gridColumnApi, setGridColumnApi] = useState<ColumnApi | null>(null);
   const [rowData, setRowData] = useState([]);
   const [rowSelected, setRowSelected] = useState<any>(null);
+
+  const copyLobbyId = () => {
+    console.log("copy lobby id");
+  };
+
+  const addPlayerDeck = () => {
+    if (props.userData && props.userData.decks.length > 0) {
+      let body = {
+        player_id: auth.user,
+        lobby_id: rowSelected.lobby_id,
+        creation: props.userData?.decks[0],
+      };
+
+      setIsLoading(true);
+      apiFetch(
+        "games/play",
+        "POST",
+        body,
+        (body: any, responseData: any) => {
+          console.log(responseData);
+          loadPlayerGames(auth.user);
+        },
+        (errorData: any, errorMsg: string) => {
+          console.error(errorMsg);
+        }
+      );
+    } else {
+      // TODO: Show this to the user in a nicer way
+      alert("You must have a deck to join a lobby");
+    }
+  };
+
+  const STATE_TO_ACTIONS: any = {
+    lobby: [
+      {
+        name: "Copy Lobby ID",
+        onClick: copyLobbyId,
+      },
+    ],
+    setup: [
+      {
+        name: "Add Deck",
+        onClick: addPlayerDeck,
+      },
+    ],
+    // setup: ["Add Deck"],
+    // player1Turn: ["Add Deck"],
+    // player2Turn: ["Add Deck"],
+    // playing: ["Refresh"],
+    // complete: [],
+  };
 
   const [columnDefs] = useState([
     { field: "player1_id", flex: 1, checkboxSelection: true },
@@ -336,9 +378,15 @@ function Play(props: PlayProps) {
                 Actions
               </Dropdown.Toggle>
               <Dropdown.Menu>
-                {STATE_TO_ACTIONS[rowSelected.state].map((action: string, index: number) => {
-                  return <Dropdown.Item>{action}</Dropdown.Item>;
-                })}
+                {STATE_TO_ACTIONS[rowSelected.state].map(
+                  (action: any, index: number) => {
+                    return (
+                      <Dropdown.Item onClick={action.onClick}>
+                        {action.name}
+                      </Dropdown.Item>
+                    );
+                  }
+                )}
               </Dropdown.Menu>
             </Dropdown>
           </div>
