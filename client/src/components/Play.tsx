@@ -123,6 +123,7 @@ function Play(props: PlayProps) {
         <p className="pageHeader">Your Games</p>
       </div>
       <div className="cardsContainer">
+        {/* show lobbies you're in + games */}
       </div>
     </div>
   );

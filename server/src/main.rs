@@ -66,9 +66,13 @@ async fn main() {
     // .route("/commit", post(commit_outcome));
     // .route("/play", post(play_game));
 
+    let player_routes = Router::new()
+        .route("/games", get(controllers::players::get_player_games));
+
     let app = Router::new()
         .route("/", get(root))
         .nest("/games", games_routes)
+        .nest("/player", player_routes)
         .layer(cors)
         .with_state(db);
 

@@ -262,8 +262,14 @@ pub async fn play_game(
     let lobby = bson::from_bson::<games::Lobby>(lobby).unwrap();
     // from_bson::<games::Lobby>(lobby);
 
-    let player1_id = lobby.player1_id;
-    let player2_id = lobby.player2_id;
+    // check if player ids exist, otherwise return
+    if lobby.player1_id.is_none() || lobby.player2_id.is_none() {
+        response.error = String::from("Lobby is not full");
+        return (StatusCode::BAD_REQUEST, Json(response));
+    }
+
+    let player1_id = lobby.player1_id.unwrap();
+    let player2_id = lobby.player2_id.unwrap();
     let is_player_1 = player1_id == payload.player_id;
 
     if !is_player_1 && player2_id != payload.player_id {

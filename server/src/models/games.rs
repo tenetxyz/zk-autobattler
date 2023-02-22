@@ -43,8 +43,8 @@ pub struct PlayGameOutput {
 pub struct Lobby {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     id: Option<ObjectId>,
-    pub player1_id: String,
-    pub player2_id: String,
+    pub player1_id: Option<String>,
+    pub player2_id: Option<String>,
     pub lobby_id: String,
 }
 
@@ -75,4 +75,15 @@ pub struct CommitOutcomeInput {
 pub struct Receipt {
     pub journal: Vec<u8>,
     pub seal: Vec<u32>,
+}
+
+#[derive(Deserialize)]
+pub struct PlayerInfo {
+    pub player_id: String,
+}
+
+#[derive(Serialize)]
+pub struct PlayerGamesOutput {
+    pub games: Vec<Game>,
+    pub error: String,
 }
