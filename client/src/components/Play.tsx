@@ -103,6 +103,11 @@ function Play(props: PlayProps) {
     }
   };
 
+  const refreshPlayerGames = () => {
+    setIsLoading(true);
+    loadPlayerGames(auth.user);
+  }
+
   const STATE_TO_ACTIONS: any = {
     lobby: [
       {
@@ -116,10 +121,22 @@ function Play(props: PlayProps) {
         onClick: addPlayerDeck,
       },
     ],
-    // setup: ["Add Deck"],
-    // player1Turn: ["Add Deck"],
-    // player2Turn: ["Add Deck"],
-    // playing: ["Refresh"],
+    player2Turn: [
+      {
+        name: "Add Deck",
+        onClick: addPlayerDeck,
+      },
+    ],
+    player1Turn: [
+      {
+        name: "Add Deck",
+        onClick: addPlayerDeck,
+      },
+    ],
+    playing: [{
+      name: "Refresh",
+      onClick: refreshPlayerGames,
+    }],
     // complete: [],
   };
 
@@ -380,13 +397,27 @@ function Play(props: PlayProps) {
               <Dropdown.Menu>
                 {STATE_TO_ACTIONS[rowSelected.state].map(
                   (action: any, index: number) => {
-                    return (
-                      <Dropdown.Item onClick={action.onClick}>
-                        {action.name}
-                      </Dropdown.Item>
-                    );
+                    const isPlayer1 = auth.user === rowSelected.player1_id;
+                    let showAction = true;
+                    if (
+                      (isPlayer1 && rowSelected.state === "player2Turn") ||
+                      (!isPlayer1 && rowSelected.state === "player1Turn")
+                    ) {
+                      showAction = false;
+                    }
+
+                    if (showAction) {
+                      return (
+                        <Dropdown.Item onClick={action.onClick}>
+                          {action.name}
+                        </Dropdown.Item>
+                      );
+                    } else {
+                      return null;
+                    }
                   }
                 )}
+                {/* <Dropdown.Item>No Available Actions</Dropdown.Item> */}
               </Dropdown.Menu>
             </Dropdown>
           </div>
