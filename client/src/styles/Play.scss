@@ -7,3 +7,14 @@
     width: 80% !important;
     max-width: 80% !important;
 }
+
+.actionBtnWrapper {
+    display: flex;
+    // padding: 30px 30px;
+}
+
+.actionDropdownWrapper {
+    display: flex;
+    margin-left: auto;
+    margin-right: 0;
+}

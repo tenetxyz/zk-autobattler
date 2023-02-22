@@ -9,16 +9,23 @@ import {
   Button,
   Modal,
   Spinner,
+  Dropdown,
 } from "react-bootstrap";
 import { apiFetch } from "../utils";
 
 import { AgGridReact } from "ag-grid-react";
 
-import { ColumnApi, GridApi, GridReadyEvent } from "ag-grid-community";
+import {
+  ColumnApi,
+  GridApi,
+  GridReadyEvent,
+  ICellRendererParams,
+  RowSelectedEvent,
+  SelectionChangedEvent,
+} from "ag-grid-community";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-
 
 import "../styles/Play.scss";
 import DeckView from "./DeckView";
@@ -62,11 +69,11 @@ function Play(props: PlayProps) {
 
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const [gridColumnApi, setGridColumnApi] = useState<ColumnApi | null>(null);
-
   const [rowData, setRowData] = useState([]);
+  const [rowSelected, setRowSelected] = useState<any>(null);
 
   const [columnDefs] = useState([
-    { field: "player1_id", flex: 1 },
+    { field: "player1_id", flex: 1, checkboxSelection: true },
     { field: "creation1_hash", flex: 1 },
     { field: "player2_id", flex: 1 },
     { field: "creation2_hash", flex: 1 },
@@ -97,7 +104,6 @@ function Play(props: PlayProps) {
     setGridColumnApi(params.columnApi);
   };
 
-
   useEffect(() => {
     if (auth && !auth.isLoading && auth.user) {
       apiFetch(
@@ -123,6 +129,18 @@ function Play(props: PlayProps) {
       gridApi?.hideOverlay();
     }
   }, [gridApi, playerGames]);
+
+  const onSelectionChanged = (event: SelectionChangedEvent) => {
+    if (gridApi) {
+      const newSelectedNodes = gridApi.getSelectedNodes();
+      if (newSelectedNodes.length > 0) {
+        let newSelectedRowData = newSelectedNodes[0].data;
+        setRowSelected(newSelectedRowData);
+      } else {
+        setRowSelected(null);
+      }
+    }
+  };
 
   return (
     <div className="pageContainer">
@@ -197,27 +215,43 @@ function Play(props: PlayProps) {
             variant={"light"}
           />
         )}
+        {rowSelected && (
+          <div className="actionDropdownWrapper">
+          <Dropdown>
+            <Dropdown.Toggle size="sm" variant="success" id="dropdown-basic">
+              Actions
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>
+              <Dropdown.Item href="#/action-1">Action</Dropdown.Item>
+              <Dropdown.Item href="#/action-2">Another action</Dropdown.Item>
+              <Dropdown.Item href="#/action-3">Something else</Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+          </div>
+        )}
       </div>
-      <div className="cardsContainer" style={{height: "100%"}}>
-      <div
-        className="ag-theme-alpine"
-        style={{ height: "100%", width: "100%" }}
-      >
-        <AgGridReact
-          pagination={true}
-          paginationPageSize={50}
-          rowData={rowData}
-          rowSelection={"single"}
-          defaultColDef={{
-            sortable: true,
-            resizable: true,
-          }}
-          headerHeight={30}
-          columnDefs={columnDefs}
-          onGridReady={onGridReady}
-          enableCellTextSelection={true}
-        ></AgGridReact>
-      </div>
+      <div className="cardsContainer" style={{ height: "100%" }}>
+        <div
+          className="ag-theme-alpine"
+          style={{ height: "100%", width: "100%" }}
+        >
+          <AgGridReact
+            pagination={true}
+            paginationPageSize={50}
+            rowData={rowData}
+            rowSelection={"single"}
+            defaultColDef={{
+              sortable: true,
+              resizable: true,
+            }}
+            headerHeight={30}
+            columnDefs={columnDefs}
+            onGridReady={onGridReady}
+            enableCellTextSelection={true}
+            onSelectionChanged={onSelectionChanged}
+          ></AgGridReact>
+        </div>
       </div>
     </div>
   );
