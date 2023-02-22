@@ -64,6 +64,14 @@ const NPCS: NPC[] = [
   },
 ];
 
+const STATE_TO_ACTIONS = {
+  "lobby": ["Copy Lobby ID"],
+  "player1Turn": ["Add Deck"],
+  "player2Turn": ["Add Deck"],
+  "playing": ["Refresh"],
+  "complete": [],
+}
+
 function Play(props: PlayProps) {
   const auth = useAuth();
 
@@ -104,26 +112,30 @@ function Play(props: PlayProps) {
     setGridColumnApi(params.columnApi);
   };
 
+  const loadPlayerGames = (player_id: string) => {
+    apiFetch(
+      "player/games?player_id=" + player_id,
+      "GET",
+      {},
+      (body: any, responseData: any) => {
+        setPlayerGames(responseData.games);
+      },
+      (errorData: any, errorMsg: string) => {
+        console.error(errorMsg);
+        // alert("API Error: " + errorMsg);
+      }
+    );
+  }
+
   useEffect(() => {
     if (auth && !auth.isLoading && auth.user) {
-      apiFetch(
-        "player/games?player_id=" + auth.user,
-        "GET",
-        {},
-        (body: any, responseData: any) => {
-          setPlayerGames(responseData.games);
-        },
-        (errorData: any, errorMsg: string) => {
-          console.error(errorMsg);
-          // alert("API Error: " + errorMsg);
-        }
-      );
+      loadPlayerGames(auth.user);
     }
   }, [auth]);
 
   useEffect(() => {
     if (playerGames) {
-      console.log(playerGames);
+      // console.log(playerGames);
       gridApi?.setRowData(playerGames);
       setIsLoading(false);
       gridApi?.hideOverlay();
@@ -141,6 +153,21 @@ function Play(props: PlayProps) {
       }
     }
   };
+
+  const createLobby = () => {
+    let body = {
+      player_id: auth.user,
+      lobby_id: "",
+      create_new: true,
+    }
+    setIsLoading(true);
+    apiFetch("games/join", "POST", body, (body: any, responseData: any) => {
+      console.log(responseData);
+      loadPlayerGames(auth.user);
+    }, (errorData: any, errorMsg: string) => {
+      console.error(errorMsg);
+    });
+  }
 
   return (
     <div className="pageContainer">
@@ -203,7 +230,7 @@ function Play(props: PlayProps) {
       <div className="cardsContainer">
         <Button variant="success">Play Random</Button>
         <Button variant="primary">Join Lobby</Button>
-        <Button variant="warning">Create Lobby</Button>
+        <Button variant="warning" onClick={createLobby}>Create Lobby</Button>
       </div>
 
       <div className="pageHeaderWrapper">
@@ -221,7 +248,6 @@ function Play(props: PlayProps) {
             <Dropdown.Toggle size="sm" variant="success" id="dropdown-basic">
               Actions
             </Dropdown.Toggle>
-
             <Dropdown.Menu>
               <Dropdown.Item href="#/action-1">Action</Dropdown.Item>
               <Dropdown.Item href="#/action-2">Another action</Dropdown.Item>

@@ -6,10 +6,12 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 // Web Server
 use axum::{
     extract::State,
+    http::Method,
     routing::{get, post},
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::trace::TraceLayer;
 
 // DB
 use mongodb::{bson::doc, options::ClientOptions, Client};
@@ -55,8 +57,7 @@ async fn main() {
     let client = connect_db(mongodb_uri).await;
     let db = client.database("Cluster0");
 
-    let cors = CorsLayer::new().allow_origin(Any);
-
+    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any);
 
     let games_routes = Router::new()
         .route("/", get(controllers::games::get_all_games))
@@ -66,14 +67,15 @@ async fn main() {
     // .route("/commit", post(commit_outcome));
     // .route("/play", post(play_game));
 
-    let player_routes = Router::new()
-        .route("/games", get(controllers::players::get_player_games));
+    let player_routes = Router::new().route("/games", get(controllers::players::get_player_games));
 
     let app = Router::new()
         .route("/", get(root))
         .nest("/games", games_routes)
         .nest("/player", player_routes)
-        .layer(cors)
+        // TODO: Replace with a real CORS policy
+        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_http())
         .with_state(db);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
@@ -85,7 +87,7 @@ async fn main() {
 }
 
 // basic handler that responds with a static string
-async fn root() -> axum::Json<serde_json::Value>  {
+async fn root() -> axum::Json<serde_json::Value> {
     axum::Json(serde_json::json!({
         "status": "tenet",
     }))

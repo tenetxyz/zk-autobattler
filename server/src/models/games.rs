@@ -13,6 +13,7 @@ pub struct FactorsInput {
 pub struct JoinGameInput {
     pub player_id: String,
     pub lobby_id: String, // TODO: Make this optional
+    pub create_new: bool,
 }
 
 #[derive(Serialize)]

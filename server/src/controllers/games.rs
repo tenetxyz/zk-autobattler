@@ -81,7 +81,7 @@ pub async fn join_game(
             )
             .await
             .unwrap();
-        if open_lobby.is_some() {
+        if !payload.create_new && open_lobby.is_some() {
             // join the lobby
             let lobby = open_lobby.unwrap();
             let lobby_id = lobby.get("_id").unwrap().as_object_id().unwrap();
