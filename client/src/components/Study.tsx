@@ -51,7 +51,7 @@ function Study(props: StudyProps) {
         }
       );
     }
-  }, []);
+  }, [auth]);
 
   const onGridReady = (params: GridReadyEvent) => {
     params.api.showLoadingOverlay();

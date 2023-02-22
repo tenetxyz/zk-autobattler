@@ -1,8 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { ForwardAuth, useAuth } from "../auth";
 import { Deck, NPC, UserData } from "../models";
-import { Card as RBCard, Form, Col, Row, Button, Modal } from "react-bootstrap";
+import {
+  Card as RBCard,
+  Form,
+  Col,
+  Row,
+  Button,
+  Modal,
+  Spinner,
+} from "react-bootstrap";
 import { apiFetch } from "../utils";
+
+import { AgGridReact } from "ag-grid-react";
+
+import { ColumnApi, GridApi, GridReadyEvent } from "ag-grid-community";
+
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+
 
 import "../styles/Play.scss";
 import DeckView from "./DeckView";
@@ -36,15 +52,34 @@ const NPCS: NPC[] = [
           attack: 6,
           health: 4,
         },
-      ]
+      ],
     },
   },
 ];
 
 function Play(props: PlayProps) {
   const auth = useAuth();
+
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const [gridColumnApi, setGridColumnApi] = useState<ColumnApi | null>(null);
+
+  const [rowData, setRowData] = useState([]);
+
+  const [columnDefs] = useState([
+    { field: "player1_id", flex: 1 },
+    { field: "creation1_hash", flex: 1 },
+    { field: "player2_id", flex: 1 },
+    { field: "creation2_hash", flex: 1 },
+    { field: "arena_hash", flex: 1 },
+    { field: "lobby_id", flex: 1 },
+    { field: "result", flex: 1 },
+    { field: "state", flex: 1 },
+  ]);
+
   const [selectedNPC, setSelectedNPC] = useState<NPC | null>(null);
   const [showDeckModal, setShowDeckModal] = useState(false);
+  const [playerGames, setPlayerGames] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const viewDeck = (npc: NPC) => {
     setSelectedNPC(npc);
@@ -54,24 +89,61 @@ function Play(props: PlayProps) {
   const handleCloseDeckModal = () => {
     setSelectedNPC(null);
     setShowDeckModal(false);
-  }
+  };
+
+  const onGridReady = (params: GridReadyEvent) => {
+    params.api.showLoadingOverlay();
+    setGridApi(params.api);
+    setGridColumnApi(params.columnApi);
+  };
+
+
+  useEffect(() => {
+    if (auth && !auth.isLoading && auth.user) {
+      apiFetch(
+        "player/games?player_id=" + auth.user,
+        "GET",
+        {},
+        (body: any, responseData: any) => {
+          setPlayerGames(responseData.games);
+        },
+        (errorData: any, errorMsg: string) => {
+          console.error(errorMsg);
+          // alert("API Error: " + errorMsg);
+        }
+      );
+    }
+  }, [auth]);
+
+  useEffect(() => {
+    if (playerGames) {
+      console.log(playerGames);
+      gridApi?.setRowData(playerGames);
+      setIsLoading(false);
+      gridApi?.hideOverlay();
+    }
+  }, [gridApi, playerGames]);
 
   return (
     <div className="pageContainer">
-      <Modal show={showDeckModal} onHide={handleCloseDeckModal} dialogClassName="deckViewModal">
+      <Modal
+        show={showDeckModal}
+        onHide={handleCloseDeckModal}
+        dialogClassName="deckViewModal"
+      >
         <Modal.Header closeButton>
           <Modal.Title>NPC {selectedNPC?.name} Deck</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedNPC &&
-             <DeckView
-             cards={selectedNPC.deck.cards}
-             onHealthValueChange={undefined}
-             onAttackValueChange={undefined}
-             disabled={true}
-             errorMsg={undefined}
-           />
-          }
+          {selectedNPC && (
+            <DeckView
+              cards={selectedNPC.deck.cards}
+              onHealthValueChange={undefined}
+              onAttackValueChange={undefined}
+              disabled={true}
+              errorMsg={undefined}
+            />
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseDeckModal}>
@@ -97,10 +169,7 @@ function Play(props: PlayProps) {
               <RBCard.Body>
                 <div className="cardOptions">
                   <Button variant="danger">Battle</Button>
-                  <Button
-                    variant="primary"
-                    onClick={() => viewDeck(npcInfo)}
-                  >
+                  <Button variant="primary" onClick={() => viewDeck(npcInfo)}>
                     View Deck
                   </Button>
                 </div>
@@ -114,16 +183,41 @@ function Play(props: PlayProps) {
         <p className="pageHeader">Humans</p>
       </div>
       <div className="cardsContainer">
-      <Button variant="success">Play Random</Button>
-      <Button variant="primary">Join Lobby</Button>
-      <Button variant="warning">Create Lobby</Button>
+        <Button variant="success">Play Random</Button>
+        <Button variant="primary">Join Lobby</Button>
+        <Button variant="warning">Create Lobby</Button>
       </div>
 
       <div className="pageHeaderWrapper">
         <p className="pageHeader">Your Games</p>
+        {isLoading && (
+          <Spinner
+            style={{ marginLeft: "20px" }}
+            animation="border"
+            variant={"light"}
+          />
+        )}
       </div>
-      <div className="cardsContainer">
-        {/* show lobbies you're in + games */}
+      <div className="cardsContainer" style={{height: "100%"}}>
+      <div
+        className="ag-theme-alpine"
+        style={{ height: "100%", width: "100%" }}
+      >
+        <AgGridReact
+          pagination={true}
+          paginationPageSize={50}
+          rowData={rowData}
+          rowSelection={"single"}
+          defaultColDef={{
+            sortable: true,
+            resizable: true,
+          }}
+          headerHeight={30}
+          columnDefs={columnDefs}
+          onGridReady={onGridReady}
+          enableCellTextSelection={true}
+        ></AgGridReact>
+      </div>
       </div>
     </div>
   );
