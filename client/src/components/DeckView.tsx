@@ -43,7 +43,7 @@ function DeckView(props: DeckViewProps) {
                 <Form.Control id={"card-attack-" + index} disabled={props.disabled} min="0" autoComplete="off" className="cardValue" type="number" value={card.attack === undefined ? "" : card.attack} onKeyPress={filterNumbers} onChange={props.onAttackValueChange} placeholder="0" />
               </div>
             </div>
-            {props.errorMsg && props.errorMsg[index] && <p className="errorMsg">{props.errorMsg[index]}</p>}
+            {props.errorMsg && props.errorMsg[index] && <p className="errorMsg" style={{marginTop: "10px"}}>{props.errorMsg[index]}</p>}
           </RBCard.Body>
         </RBCard>
         )

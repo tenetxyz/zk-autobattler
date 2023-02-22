@@ -26,7 +26,7 @@ export async function apiFetch(
     .then((response) => response.json())
     .then((rawData) => {
       if (rawData["error"] !== undefined && rawData["error"] !== "") {
-        errorFunc(rawData, "Tenet error");
+        errorFunc(rawData, rawData["error"]);
       } else {
         successFunc(body, rawData);
       }

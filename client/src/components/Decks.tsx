@@ -41,7 +41,9 @@ function Decks(props: DecksProps) {
 
   useEffect(() => {
     if (props.userData) {
-      setCards(props.userData.decks[0].cards);
+      if(props.userData.decks.length > 0){
+        setCards(props.userData.decks[0].cards);
+      }
     }
   }, [props.userData]);
 

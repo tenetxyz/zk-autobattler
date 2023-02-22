@@ -93,8 +93,12 @@ function Play(props: PlayProps) {
 
   const [selectedNPC, setSelectedNPC] = useState<NPC | null>(null);
   const [showDeckModal, setShowDeckModal] = useState(false);
+  const [showJoinLobbyModal, setShowJoinLobbyModal] = useState(false);
+  const [joinLobbyId, setJoinLobbyId] = useState<string>("");
   const [playerGames, setPlayerGames] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
 
   const viewDeck = (npc: NPC) => {
     setSelectedNPC(npc);
@@ -105,6 +109,12 @@ function Play(props: PlayProps) {
     setSelectedNPC(null);
     setShowDeckModal(false);
   };
+
+  const handleCloseJoinLobbyModal = () => {
+    setShowJoinLobbyModal(false);
+    setJoinLobbyId("");
+    setErrorMsg(null);
+  }
 
   const onGridReady = (params: GridReadyEvent) => {
     params.api.showLoadingOverlay();
@@ -154,7 +164,7 @@ function Play(props: PlayProps) {
     }
   };
 
-  const createLobby = () => {
+  const onCreateLobby = () => {
     let body = {
       player_id: auth.user,
       lobby_id: "",
@@ -167,6 +177,34 @@ function Play(props: PlayProps) {
     }, (errorData: any, errorMsg: string) => {
       console.error(errorMsg);
     });
+  }
+
+  const onJoinLobby = () => {
+    setShowJoinLobbyModal(true);
+    setJoinLobbyId("");
+  }
+
+  const joinLobby = () => {
+    setIsLoading(true);
+    let body = {
+      player_id: auth.user,
+      lobby_id: joinLobbyId,
+      create_new: false,
+    }
+    apiFetch("games/join", "POST", body, (body: any, responseData: any) => {
+      console.log(responseData);
+      loadPlayerGames(auth.user);
+      setShowJoinLobbyModal(false);
+    }, (errorData: any, errorMsg: string) => {
+      console.error(errorMsg);
+      setErrorMsg(errorMsg);
+      setIsLoading(false);
+    });
+  }
+
+  const onJoinLobbyIdChange = (event: any) => {
+    setJoinLobbyId(event.target.value);
+    setErrorMsg(null);
   }
 
   return (
@@ -193,6 +231,35 @@ function Play(props: PlayProps) {
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseDeckModal}>
             Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showJoinLobbyModal} onHide={handleCloseJoinLobbyModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Join a Lobby</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Lobby Id</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="xyz"
+                autoFocus
+                value={joinLobbyId}
+                onChange={onJoinLobbyIdChange}
+              />
+            </Form.Group>
+          </Form>
+          {errorMsg && <p className="errorMsg">{errorMsg}</p>}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseJoinLobbyModal}>
+            Close
+          </Button>
+          <Button variant="primary" disabled={joinLobbyId.length === 0} onClick={joinLobby}>
+            Join
           </Button>
         </Modal.Footer>
       </Modal>
@@ -229,8 +296,8 @@ function Play(props: PlayProps) {
       </div>
       <div className="cardsContainer">
         <Button variant="success">Play Random</Button>
-        <Button variant="primary">Join Lobby</Button>
-        <Button variant="warning" onClick={createLobby}>Create Lobby</Button>
+        <Button variant="primary" onClick={onJoinLobby}>Join Lobby</Button>
+        <Button variant="warning" onClick={onCreateLobby}>Create Lobby</Button>
       </div>
 
       <div className="pageHeaderWrapper">
