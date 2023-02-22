@@ -274,6 +274,27 @@ function Play(props: PlayProps) {
     );
   };
 
+  const onPlayRandom = () => {
+    setIsLoading(true);
+    let body = {
+      player_id: auth.user,
+      lobby_id: "",
+      create_new: false,
+    };
+    apiFetch(
+      "games/join",
+      "POST",
+      body,
+      (body: any, responseData: any) => {
+        console.log(responseData);
+        loadPlayerGames(auth.user);
+      },
+      (errorData: any, errorMsg: string) => {
+        console.error(errorMsg);
+      }
+    );
+  }
+
   const onJoinLobbyIdChange = (event: any) => {
     setJoinLobbyId(event.target.value);
     setErrorMsg(null);
@@ -371,7 +392,7 @@ function Play(props: PlayProps) {
         <p className="pageHeader">Humans</p>
       </div>
       <div className="cardsContainer">
-        <Button variant="success">Play Random</Button>
+        <Button variant="success" onClick={onPlayRandom}>Play Random</Button>
         <Button variant="primary" onClick={onJoinLobby}>
           Join Lobby
         </Button>
