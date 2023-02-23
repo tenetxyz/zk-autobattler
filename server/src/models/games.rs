@@ -35,8 +35,22 @@ pub struct PlayGameInput {
     pub player_id: String,
     pub creation: Deck,
 }
+
+#[derive(Deserialize)]
+pub struct PlayNPCGameInput {
+    pub player_id: String,
+    pub creation: Deck,
+    pub npc_id: String,
+    pub npc_creation: Deck,
+}
+
 #[derive(Serialize)]
 pub struct PlayGameOutput {
+    pub error: String,
+}
+
+#[derive(Serialize)]
+pub struct PlayNPCGameOutput {
     pub error: String,
 }
 

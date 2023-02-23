@@ -63,6 +63,7 @@ async fn main() {
         .route("/", get(controllers::games::get_all_games))
         .route("/join", post(controllers::games::join_game))
         .route("/play", post(controllers::games::play_game))
+        .route("/play/npc", post(controllers::games::play_npc_game))
         .route("/commit", post(controllers::games::commit_outcome));
     // .route("/commit", post(commit_outcome));
     // .route("/play", post(play_game));

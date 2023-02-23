@@ -433,6 +433,127 @@ pub async fn play_game(
     return (StatusCode::OK, Json(response));
 }
 
+pub async fn play_npc_game(
+    // this argument tells axum to parse the request body
+    State(db): State<Database>,
+    Json(payload): Json<games::PlayNPCGameInput>,
+) -> impl IntoResponse {
+    tracing::info!("play_npc_game called");
+
+    let mut response = games::PlayNPCGameOutput {
+        error: String::from(""),
+    };
+
+    // Check if player has battled this NPC before by checking if game exists with player creation and NCP creation
+    let games = db.collection("game");
+
+    let player_creation_hah = payload.creation;
+    let mut s = DefaultHasher::new();
+    player_creation_hah.hash(&mut s);
+    let player_creation_hash = s.finish().to_string();
+
+    let npc_creation_hash = payload.npc_creation;
+    let mut s = DefaultHasher::new();
+    npc_creation_hash.hash(&mut s);
+    let npc_creation_hash = s.finish().to_string();
+
+    let game = games
+        .find_one(
+            doc! {
+                "player1_id": payload.player_id.clone(),
+                "creation1_hash": player_creation_hash.clone(),
+                "creation2_hash": npc_creation_hash.clone(),
+            },
+            None,
+        )
+        .await
+        .unwrap();
+
+    if game.is_some() {
+        // game played, return error
+        response.error = String::from("You have already played this NPC with this deck");
+        return (StatusCode::BAD_REQUEST, Json(response));
+    }
+
+    let lobbies = db.collection("lobby");
+
+    // Create new lobby with player and NPC
+    let new_lobby = doc! {
+        "lobby_id": null,
+        "player1_id": payload.player_id.clone(),
+        "player2_id": payload.npc_id.clone(),
+    };
+    let insert_result = lobbies.insert_one(new_lobby.clone(), None).await.unwrap();
+    let newlobby_id = insert_result.inserted_id.as_object_id().unwrap();
+
+    let update_result = lobbies
+        .update_one(
+            doc! {
+                "_id": newlobby_id,
+            },
+            doc! {
+                "$set": { "lobby_id": newlobby_id.to_string() }
+            },
+            None,
+        )
+        .await
+        .unwrap();
+
+    // create new game
+
+    let arena_hash = TENET_ARENA_1_ID;
+    let mut s = DefaultHasher::new();
+    arena_hash.hash(&mut s);
+    let arena_hash = s.finish().to_string();
+
+    let creation1_bson = bson::to_bson(&payload.creation).unwrap();
+    let creation2_bson = bson::to_bson(&payload.npc_creation).unwrap();
+
+    let mut new_game = doc! {
+        "lobby_id": newlobby_id.to_string(),
+        "player1_id": payload.player_id.clone(),
+        "player2_id": payload.npc_id.clone(),
+        "creation1": creation1_bson,
+        "creation1_hash": player_creation_hash.clone(),
+        "creation2": creation2_bson,
+        "creation2_hash": npc_creation_hash.clone(),
+        "arena_hash": arena_hash,
+        "winner_creation_hash": null,
+        "winner_id": null,
+        "state": "playing",
+        "result": null
+    };
+
+    let insert_result = games.insert_one(new_game.clone(), None).await.unwrap();
+
+    // get inserted game
+    let game_id = insert_result.inserted_id.as_object_id().unwrap();
+    let game_doc = games
+        .find_one(
+            doc! {
+                "_id": game_id,
+            },
+            None,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+
+    let game_id = game_doc.get("_id").unwrap().as_object_id().unwrap();
+    let game = bson::to_bson(&game_doc).unwrap();
+    let game = bson::from_bson::<games::Game>(game).unwrap();
+
+    let games_ref = games.clone();
+    let game_thread = game.clone();
+    tokio::task::spawn(async move {
+        // TODO: Catch error in proof of battle
+        let receipt = commence_battle(&game_thread).await;
+        commit_game_result(games_ref, &game_thread, &receipt).await;
+    });
+
+    return (StatusCode::OK, Json(response));
+}
+
 pub async fn commit_outcome(
     // this argument tells axum to parse the request body
     State(db): State<Database>,

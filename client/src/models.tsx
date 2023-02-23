@@ -15,4 +15,5 @@ export type UserData = {
 export type NPC = {
   name: string;
   deck: Deck;
+  deckHash: string;
 }

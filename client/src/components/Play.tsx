@@ -37,6 +37,7 @@ interface PlayProps {
 const NPCS: NPC[] = [
   {
     name: "Goblin",
+    deckHash: "7692005092496036419",
     deck: {
       cards: [
         {
@@ -71,6 +72,7 @@ function Play(props: PlayProps) {
   const [gridColumnApi, setGridColumnApi] = useState<ColumnApi | null>(null);
   const [rowData, setRowData] = useState([]);
   const [rowSelected, setRowSelected] = useState<any>(null);
+  const [battledNPCIds, setBattledNPCIds] = useState<Set<string>>(new Set());
 
   const copyLobbyId = () => {
     console.log("copy lobby id");
@@ -209,6 +211,17 @@ function Play(props: PlayProps) {
       setRowSelected(null);
       setIsLoading(false);
       gridApi?.hideOverlay();
+      // check if player has battled all NPCs using this current deck
+      console.log(playerGames);
+      playerGames.forEach((game: any) => {
+        NPCS.forEach((npc: NPC) => {
+          if (game.creation2_hash === npc.deckHash) {
+            let newBattledNPCIds = new Set(battledNPCIds);
+            newBattledNPCIds.add(npc.name);
+            setBattledNPCIds(newBattledNPCIds);
+          }
+        });
+      });
     }
   }, [gridApi, playerGames]);
 
@@ -300,6 +313,35 @@ function Play(props: PlayProps) {
     setErrorMsg(null);
   };
 
+  const battleNPC = (npc: NPC) => {
+    if (props.userData && props.userData.decks.length > 0) {
+      let body = {
+        player_id: auth.user,
+        creation: props.userData?.decks[0],
+        npc_id: npc.name,
+        npc_creation: npc.deck,
+      };
+
+      setIsLoading(true);
+      apiFetch(
+        "games/play/npc",
+        "POST",
+        body,
+        (body: any, responseData: any) => {
+          console.log(responseData);
+          loadPlayerGames(auth.user);
+        },
+        (errorData: any, errorMsg: string) => {
+          console.error(errorMsg);
+        }
+      );
+    } else {
+      // TODO: Show this to the user in a nicer way
+      alert("You must have a deck to battle");
+    }
+
+  }
+
   return (
     <div className="pageContainer">
       <Modal
@@ -377,8 +419,8 @@ function Play(props: PlayProps) {
               <RBCard.Header>{npcInfo.name}</RBCard.Header>
               <RBCard.Body>
                 <div className="cardOptions">
-                  <Button variant="danger">Battle</Button>
-                  <Button variant="primary" onClick={() => viewDeck(npcInfo)}>
+                  <Button variant="danger" disabled={isLoading || battledNPCIds.has(npcInfo.name)}  onClick={() => battleNPC(npcInfo)}>Battle</Button>
+                  <Button variant="primary" disabled={isLoading}  onClick={() => viewDeck(npcInfo)}>
                     View Deck
                   </Button>
                 </div>
@@ -392,11 +434,11 @@ function Play(props: PlayProps) {
         <p className="pageHeader">Humans</p>
       </div>
       <div className="cardsContainer">
-        <Button variant="success" onClick={onPlayRandom}>Play Random</Button>
-        <Button variant="primary" onClick={onJoinLobby}>
+        <Button variant="success" disabled={isLoading || battledNPCIds.size < NPCS.length} onClick={onPlayRandom}>Play Random</Button>
+        <Button variant="primary" disabled={isLoading || battledNPCIds.size < NPCS.length}  onClick={onJoinLobby}>
           Join Lobby
         </Button>
-        <Button variant="warning" onClick={onCreateLobby}>
+        <Button variant="warning" disabled={isLoading || battledNPCIds.size < NPCS.length}  onClick={onCreateLobby}>
           Create Lobby
         </Button>
       </div>
@@ -413,7 +455,7 @@ function Play(props: PlayProps) {
         {rowSelected && (
           <div className="actionDropdownWrapper">
             <Dropdown>
-              <Dropdown.Toggle size="sm" variant="success" id="dropdown-basic">
+              <Dropdown.Toggle disabled={isLoading} size="sm" variant="success" id="dropdown-basic">
                 Actions
               </Dropdown.Toggle>
               <Dropdown.Menu>
