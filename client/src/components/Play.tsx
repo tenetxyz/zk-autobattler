@@ -215,6 +215,7 @@ function Play(props: PlayProps) {
       console.log(playerGames);
       playerGames.forEach((game: any) => {
         NPCS.forEach((npc: NPC) => {
+          // TODO: Check player creation hash
           if (game.creation2_hash === npc.deckHash) {
             let newBattledNPCIds = new Set(battledNPCIds);
             newBattledNPCIds.add(npc.name);
