@@ -45,14 +45,6 @@ pub fn main() {
     let player2_id: String = env::read();
     let o_creation2: tenet_core::Deck = env::read();
 
-    // Check if creations are valid
-    if !is_valid(o_creation1) {
-        panic!("Invalid deck by player 1")
-    }
-    if !is_valid(o_creation2) {
-        panic!("Invalid deck by player 2")
-    }
-
     let mut creation1 = o_creation1.clone();
     let mut creation2 = o_creation2.clone();
 
@@ -66,10 +58,28 @@ pub fn main() {
     creation2_hash.hash(&mut s);
     let creation2_hash = s.finish().to_string();
 
-    // let creation1_hash ;
-    // let creation2_hash ;
-    let mut winner_id = String::from("");
-    let mut winner_creation_hash = String::from("");
+    let mut game_result = tenet_core::GameResult {
+        player1_id: player1_id.clone(),
+        player2_id: player2_id.clone(),
+        creation1_hash: creation1_hash.clone(),
+        creation2_hash: creation2_hash.clone(),
+        winner_creation_hash: String::from(""),
+        winner_id: String::from(""),
+        result: String::from(""),
+        error: String::from(""),
+    };
+
+    // Check if creations are valid
+    if !is_valid(o_creation1) {
+        game_result.error = String::from("Invalid deck by player 1");
+        env::commit(&game_result);
+        return;
+    }
+    if !is_valid(o_creation2) {
+        game_result.error = String::from("Invalid deck by player 2");
+        env::commit(&game_result);
+        return;
+    }
 
     // Run the logic
     let mut creation1_idx = 0;
@@ -130,31 +140,20 @@ pub fn main() {
         }
     }
 
-    let mut result = String::from("");
     if player1_card.is_some(){
         // player 1 wins
-        winner_id = player1_id.clone();
-        winner_creation_hash = creation1_hash.clone();
-        result = String::from("PLAYER1_WINS");
+        game_result.winner_id = player1_id.clone();
+        game_result.winner_creation_hash = creation1_hash.clone();
+        game_result.result = String::from("PLAYER1_WINS");
     } else if player2_card.is_some() {
         // player 2 wins
-        winner_id = player2_id.clone();
-        winner_creation_hash = creation2_hash.clone();
-        result = String::from("PLAYER2_WINS");
+        game_result.winner_id = player2_id.clone();
+        game_result.winner_creation_hash = creation2_hash.clone();
+        game_result.result = String::from("PLAYER2_WINS");
     } else {
         // tie
-        result = String::from("TIE");
+        game_result.result = String::from("TIE");
     }
-
-    let game_result = tenet_core::GameResult {
-        player1_id: player1_id,
-        player2_id: player2_id,
-        creation1_hash: creation1_hash,
-        creation2_hash: creation2_hash,
-        winner_creation_hash: winner_creation_hash,
-        winner_id: winner_id,
-        result: result,
-    };
 
     env::commit(&game_result);
 }

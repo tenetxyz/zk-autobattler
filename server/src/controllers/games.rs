@@ -194,38 +194,59 @@ async fn commit_game_result(
     let vec = &receipt.journal;
     let game_result: tenet_core::GameResult = from_slice(vec).unwrap();
 
+
     // Sanity check
     assert!(*game.creation1_hash.as_ref().unwrap() == game_result.creation1_hash);
     assert!(*game.creation2_hash.as_ref().unwrap() == game_result.creation2_hash);
 
-    let mut new_game_doc = doc! {
-        "winner_creation_hash": null,
-        "winner_id": null,
-        "result": game_result.result.clone(),
-        "state": "complete"
-    };
-
-    if !game_result.winner_creation_hash.is_empty() {
-        new_game_doc.insert(
-            "winner_creation_hash",
-            game_result.winner_creation_hash.clone(),
-        );
-        new_game_doc.insert("winner_id", game_result.winner_id.clone());
-    }
-
-    let update_result = games_ref
+    if !game_result.error.is_empty() {
+        let update_result = games_ref
         .update_one(
             doc! {
                 "_id": game.id,
             },
             doc! {
-                "$set": new_game_doc,
-                "$unset": { "creation1": "", "creation2": "" }
+                "$set": doc! {
+                    "state": "error",
+                    "error": game_result.error.clone()
+                },
             },
             None,
         )
         .await
         .unwrap();
+    } else {
+        let mut new_game_doc = doc! {
+            "winner_creation_hash": null,
+            "winner_id": null,
+            "result": game_result.result.clone(),
+            "state": "complete"
+        };
+
+        if !game_result.winner_creation_hash.is_empty() {
+            new_game_doc.insert(
+                "winner_creation_hash",
+                game_result.winner_creation_hash.clone(),
+            );
+            new_game_doc.insert("winner_id", game_result.winner_id.clone());
+        }
+
+        let update_result = games_ref
+            .update_one(
+                doc! {
+                    "_id": game.id,
+                },
+                doc! {
+                    "$set": new_game_doc,
+                    "$unset": { "creation1": "", "creation2": "" }
+                },
+                None,
+            )
+            .await
+            .unwrap();
+
+    }
+
 }
 
 // TODO: Which hash function to use?
@@ -314,7 +335,8 @@ pub async fn play_game(
             "winner_creation_hash": null,
             "winner_id": null,
             "state": null,
-            "result": null
+            "result": null,
+            "error": null
         };
 
         if is_player_1 {

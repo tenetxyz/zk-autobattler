@@ -39,4 +39,5 @@ pub struct GameResult {
     pub winner_creation_hash: String,
     pub winner_id: String,
     pub result: String,
+    pub error: String,
 }
