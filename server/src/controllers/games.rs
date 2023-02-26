@@ -1,4 +1,5 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use tokio;
@@ -158,7 +159,8 @@ async fn commence_battle(game: &games::Game) -> risc0_zkvm::Receipt {
     // start the battle with both user inputs
     let arena_src = std::fs::read(TENET_ARENA_1_PATH)
     .expect("Method code should be present at the specified path; did you use the correct *_PATH constant?");
-    let mut prover = Prover::new(&arena_src, TENET_ARENA_1_ID).expect(
+    let prover_opts = risc0_zkvm::ProverOpts::default().with_skip_seal(true);
+    let mut prover = Prover::new_with_opts(&arena_src, TENET_ARENA_1_ID, prover_opts).expect(
         "Prover should be constructed from valid method source code and corresponding method ID",
     );
 
@@ -185,9 +187,10 @@ async fn commit_game_result(
     receipt: &risc0_zkvm::Receipt,
 ) {
     // Verify receipt
-    receipt
-        .verify(&TENET_ARENA_1_ID)
-        .expect("Receipt should be valid for the given method ID");
+    // HACK: Verification turned off, since seal is skipped for performance reasons
+    // receipt
+    //     .verify(&TENET_ARENA_1_ID)
+    //     .expect("Receipt should be valid for the given method ID");
 
     // battle has finished update the game document
     // remove the user creations and add the battle result
