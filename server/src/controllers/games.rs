@@ -159,6 +159,7 @@ async fn commence_battle(game: &games::Game) -> risc0_zkvm::Receipt {
     // start the battle with both user inputs
     let arena_src = std::fs::read(TENET_ARENA_1_PATH)
     .expect("Method code should be present at the specified path; did you use the correct *_PATH constant?");
+
     let prover_opts = risc0_zkvm::ProverOpts::default().with_skip_seal(true);
     let mut prover = Prover::new_with_opts(&arena_src, TENET_ARENA_1_ID, prover_opts).expect(
         "Prover should be constructed from valid method source code and corresponding method ID",

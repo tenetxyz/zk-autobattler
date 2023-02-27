@@ -29,6 +29,7 @@ fn is_valid(deck: tenet_core::Deck) -> bool {
             return false
         }
 
+        // TODO: Use checked add
         let sum = card.health + card.attack;
         if sum != 10 {
             return false
