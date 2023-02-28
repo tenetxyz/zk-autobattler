@@ -149,7 +149,7 @@ function Decks(props: DecksProps) {
   return (
     <div className="pageContainer">
       <div className="pageHeaderWrapper">
-        <p className="pageHeader">Your Deck</p>
+        <p className="pageHeader">Edit Deck: {state.deck.name} ({state.deck.type})</p>
         {modified && (
           <div className="cardButton">
             <Button variant="primary" onClick={saveCardClicked}>
