@@ -112,6 +112,8 @@ function Decks(props: DecksProps) {
   const saveCardClicked = () => {
     if (validateCards(cards)) {
       let playerDeck: Deck = {
+        name: "Player Deck",
+        type: "BASIC_5",
         cards: cards,
       };
       localStorage.setItem("playerDeck", JSON.stringify(playerDeck));

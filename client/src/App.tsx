@@ -9,6 +9,7 @@ import Study from "./components/Study";
 
 import { Deck, UserData } from "./models";
 import Play from "./components/Play";
+import Creations from "./components/Creations";
 
 // CSS
 
@@ -29,18 +30,19 @@ function App(props: AppProps) {
 
   useEffect(() => {
     if (auth && !auth.isLoading && auth.user) {
-      let newUserData: UserData = {
-        decks: [],
+      let userCreations: string | null = localStorage.getItem("userCreations");
+      if (userCreations) {
+        let savedUserData: UserData = JSON.parse(userCreations);
+        setUserData(savedUserData);
       }
-      let playerDeckRaw: string | null = localStorage.getItem("playerDeck");
-      if (playerDeckRaw) {
-        let playerDeck: Deck = JSON.parse(playerDeckRaw);
-        newUserData.decks.push(playerDeck);
-      }
-      setUserData(newUserData);
       setIsLoading(false);
     }
   }, [auth]);
+
+  const saveUserData = (newUserData: UserData) => {
+    setUserData(newUserData);
+    localStorage.setItem("userCreations", JSON.stringify(newUserData));
+  }
 
   if (isLoading) {
     return (
@@ -52,7 +54,7 @@ function App(props: AppProps) {
 
   return (
     <Routes>
-      <Route path="/deck" element={<Decks userData={userData} setUserData={setUserData} />} />
+      <Route path="/creations" element={<Creations userData={userData} saveUserData={saveUserData} />} />
       <Route path="/study" element={<Study userData={userData} />} />
       <Route path="/play" element={<Play userData={userData} />} />
       <Route path="*" element={<PageNotFound />} />

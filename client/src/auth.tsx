@@ -115,7 +115,7 @@ function ForwardAuth({ children }: { children: JSX.Element }) {
   }
 
   if (auth.user) {
-    return <Navigate to="/deck" state={{ from: location }} replace />;
+    return <Navigate to="/creations" state={{ from: location }} replace />;
   }
 
   return children;

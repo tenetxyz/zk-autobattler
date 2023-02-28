@@ -59,5 +59,11 @@
             - playerB_ID
 
 ### TODO
+- Let user create multiple decks
+- Let user select which auto battler to play
+- Add tutorial page for when you join the game
+
+
+### Questions
 - How do users move creations between browsers? Or if they clear data in browser, do they loose it all?
 - Brute force hash table problem

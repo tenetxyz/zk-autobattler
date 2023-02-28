@@ -39,6 +39,8 @@ const NPCS: NPC[] = [
     name: "Goblin",
     deckHash: "7692005092496036419",
     deck: {
+      name: "Goblin",
+      type: "BASIC_5",
       cards: [
         {
           attack: 5,
