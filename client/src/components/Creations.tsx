@@ -4,6 +4,7 @@ import { Card as RBCard, Form, Col, Row, Button, Modal } from "react-bootstrap";
 // CSS
 import "../styles/Creations.scss";
 import { Card, Deck, UserData } from "../models";
+import { useNavigate } from "react-router-dom";
 
 interface CreationsProps {
   userData: UserData | null;
@@ -24,6 +25,7 @@ const DECK_TYPES = [
 function Creations(props: CreationsProps) {
   const [showCreateDeckModal, setShowCreateDeckModal] =
     useState<boolean>(false);
+  const navigate = useNavigate();
   const [deckName, setDeckName] = useState<string>("");
   const [deckType, setDeckType] = useState<string>("");
 
@@ -46,6 +48,7 @@ function Creations(props: CreationsProps) {
       JSON.stringify(props.userData)
     );
     let newDeck: Deck = {
+      id: 0,
       name: deckName,
       type: deckType,
       cards: [],
@@ -55,10 +58,15 @@ function Creations(props: CreationsProps) {
         decks: [],
       };
     }
+    newDeck.id = newUserData.decks.length;
     newUserData.decks.push(newDeck);
     props.saveUserData(newUserData);
     setShowCreateDeckModal(false);
   };
+
+  const editDeck = (deck: Deck) => {
+    navigate('/deck', { state: { deck: deck } });
+  }
 
   return (
     <div className="pageContainer">
@@ -131,7 +139,7 @@ function Creations(props: CreationsProps) {
                 </RBCard.Header>
                 <RBCard.Body>
                   <div className="cardOptions">
-                    <Button variant="secondary">Edit</Button>
+                    <Button variant="secondary" onClick={() => editDeck(deck)}>Edit</Button>
                   </div>
                 </RBCard.Body>
               </RBCard>

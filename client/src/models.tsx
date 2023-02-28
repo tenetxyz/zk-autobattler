@@ -6,6 +6,7 @@ export type Card = {
 export type Deck = {
     // TODO: Set a limit on the number of cards in a deck
     name: string;
+    id: number;
     type: string;
     cards: Card[];
 };

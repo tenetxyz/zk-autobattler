@@ -5,47 +5,74 @@ import { Card as RBCard, Form, Col, Row, Button } from "react-bootstrap";
 import "../styles/Decks.scss";
 import { Card, Deck, UserData } from "../models";
 import DeckView from "./DeckView";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface DecksProps {
   userData: UserData | null;
-  setUserData: any;
+  saveUserData: any;
+}
+
+const PLACEHOLDER_DECKS: any = {
+  BASIC_5: [
+    {
+      health: undefined,
+      attack: undefined,
+    },
+    {
+      health: undefined,
+      attack: undefined,
+    },
+    {
+      health: undefined,
+      attack: undefined,
+    },
+    {
+      health: undefined,
+      attack: undefined,
+    },
+    {
+      health: undefined,
+      attack: undefined,
+    }
+  ]
 }
 
 function Decks(props: DecksProps) {
-  const [cards, setCards] = useState<Card[]>([
-    {
-      health: undefined,
-      attack: undefined,
-    },
-    {
-      health: undefined,
-      attack: undefined,
-    },
-    {
-      health: undefined,
-      attack: undefined,
-    },
-    {
-      health: undefined,
-      attack: undefined,
-    },
-    {
-      health: undefined,
-      attack: undefined,
-    },
-  ]);
+  const {state} = useLocation();
+  const navigate = useNavigate();
+
+  const [cards, setCards] = useState<Card[] | undefined>(() => {
+    if(state && state.deck){
+      if (state.deck.cards.length > 0) {
+        return state.deck.cards;
+      } else {
+        return PLACEHOLDER_DECKS[state.deck.type];
+      }
+    } else {
+      return undefined;
+    }
+  });
+
   const [modified, setModified] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string[]>(
-    Array(cards.length).fill("")
+    () => {
+      if (cards){
+        return Array(cards.length).fill("");
+      } else {
+        return [];
+      }
+    }
   );
 
   useEffect(() => {
-    if (props.userData) {
-      if(props.userData.decks.length > 0){
-        setCards(props.userData.decks[0].cards);
-      }
+    if (state == null || state.deck === undefined){
+      navigate("/creations");
     }
-  }, [props.userData]);
+  }, [])
+
+  if (cards === undefined){
+    return null;
+  }
 
   const parseNumber = (value: string) => {
     let newValue = undefined;
@@ -79,12 +106,6 @@ function Decks(props: DecksProps) {
     setErrorMsg(newErrorMsgs);
   };
 
-  const filterNumbers = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!e.key.match(/^\d+$/)) {
-      e.preventDefault();
-    }
-  };
-
   const validateCards = (cards: Card[]) => {
     let isValid = true;
     let newErrorMsgs = [...errorMsg];
@@ -111,18 +132,17 @@ function Decks(props: DecksProps) {
 
   const saveCardClicked = () => {
     if (validateCards(cards)) {
-      let playerDeck: Deck = {
-        name: "Player Deck",
-        type: "BASIC_5",
-        cards: cards,
-      };
-      localStorage.setItem("playerDeck", JSON.stringify(playerDeck));
-      if (props.userData) {
-        let newUserData: UserData | null = { ...props.userData };
-        newUserData.decks[0] = playerDeck;
-        props.setUserData(newUserData);
+      let newUserData: UserData | null = JSON.parse(
+        JSON.stringify(props.userData)
+      );
+      if(newUserData){
+        let newDeck = newUserData.decks.find((deck) => deck.id === state.deck.id);
+        if(newDeck){
+          newDeck.cards = cards;
+          props.saveUserData(newUserData);
+          setModified(false);
+        }
       }
-      setModified(false);
     }
   };
 

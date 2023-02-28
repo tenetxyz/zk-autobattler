@@ -55,6 +55,7 @@ function App(props: AppProps) {
   return (
     <Routes>
       <Route path="/creations" element={<Creations userData={userData} saveUserData={saveUserData} />} />
+      <Route path="/deck" element={<Decks userData={userData} saveUserData={saveUserData}  />} />
       <Route path="/study" element={<Study userData={userData} />} />
       <Route path="/play" element={<Play userData={userData} />} />
       <Route path="*" element={<PageNotFound />} />
